@@ -1,7 +1,7 @@
 app_name = "brd_tool"
-app_title = "Brd Tool"
-app_publisher = "QCS"
-app_description = "BRD Tooling"
+app_title = "BRD Tool"
+app_publisher = "Quark Cyber Systems FZC"
+app_description = "Business Requirements Document collection tool for ERPNext implementations"
 app_email = "info@quarkcs.com"
 app_license = "mit"
 
@@ -83,7 +83,7 @@ app_license = "mit"
 # ------------
 
 # before_install = "brd_tool.install.before_install"
-# after_install = "brd_tool.install.after_install"
+after_install = "brd_tool.install.after_install"
 
 # Uninstallation
 # ------------

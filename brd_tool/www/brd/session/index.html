@@ -1,0 +1,226 @@
+{% extends "templates/web.html" %}
+
+{% block head_include %}
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Raleway:300,500,600,700|Poppins:300,400,500,600,700" rel="stylesheet">
+<link rel="stylesheet" href="/assets/brd_tool/css/brd_portal.css">
+{% endblock %}
+
+{% block page_content %}
+{% if error %}
+<div class="brd-error-page">
+	<div class="brd-error-card">
+		<div class="brd-error-icon">!</div>
+		<h2>Access Error</h2>
+		<p>{{ error }}</p>
+		<p class="brd-error-hint">Please check the link you received or contact your consultant.</p>
+	</div>
+</div>
+{% else %}
+
+<div class="brd-app" id="brd-app" data-access-key="{{ session.access_key }}" data-is-submitted="{{ 'true' if is_submitted else 'false' }}">
+
+	<!-- Header Bar -->
+	<div class="brd-header">
+		<div class="brd-header-inner">
+			<div class="brd-header-brand">
+				<span class="brd-logo-text">QCS</span>
+				<span class="brd-logo-divider">|</span>
+				<span class="brd-logo-sub">BRD Tool</span>
+			</div>
+			<div class="brd-header-title">{{ brd_template.module_name }} Requirements</div>
+			<div class="brd-header-client">{{ project.client_name or project.client_company or '' }}</div>
+		</div>
+	</div>
+
+	<!-- Submitted Banner -->
+	{% if is_submitted %}
+	<div class="brd-submitted-banner">
+		<span class="brd-submitted-icon">&#10003;</span>
+		This BRD was submitted on {{ frappe.utils.format_datetime(session.submitted_on, "dd MMM yyyy, hh:mm a") }}.
+		Thank you, {{ session.respondent_name }}!
+	</div>
+	{% endif %}
+
+	<!-- Sticky Toolbar -->
+	<div class="brd-toolbar" id="brd-toolbar">
+		<div class="brd-toolbar-inner">
+			<div class="brd-toolbar-status">
+				<span class="brd-status-dot" id="brd-status-dot"></span>
+				<span class="brd-status-text" id="brd-status-text">Ready</span>
+			</div>
+			<div class="brd-toolbar-progress">
+				<span class="brd-progress-pct" id="brd-progress-pct">{{ session.progress|int }}%</span>
+				<div class="brd-progress-track">
+					<div class="brd-progress-fill" id="brd-progress-fill" style="width:{{ session.progress|int }}%"></div>
+				</div>
+			</div>
+			{% if not is_submitted %}
+			<div class="brd-toolbar-actions">
+				<button class="brd-btn brd-btn-outline" id="brd-save-btn" type="button">Save Draft</button>
+				<button class="brd-btn brd-btn-primary" id="brd-submit-btn" type="button">Submit</button>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+
+	<!-- Respondent Info -->
+	{% if not is_submitted %}
+	<div class="brd-respondent-card" id="brd-respondent-card">
+		<h3 class="brd-respondent-title">Your Information</h3>
+		<div class="brd-respondent-fields">
+			<div class="brd-field">
+				<label>Name <span class="brd-req">*</span></label>
+				<input type="text" id="brd-resp-name" value="{{ session.respondent_name or '' }}" placeholder="Your full name">
+			</div>
+			<div class="brd-field">
+				<label>Email <span class="brd-req">*</span></label>
+				<input type="email" id="brd-resp-email" value="{{ session.respondent_email or '' }}" placeholder="Your email address">
+			</div>
+			<div class="brd-field">
+				<label>Role / Title</label>
+				<input type="text" id="brd-resp-role" value="{{ session.respondent_role or '' }}" placeholder="e.g. Finance Manager">
+			</div>
+		</div>
+	</div>
+	{% else %}
+	<div class="brd-respondent-card brd-readonly">
+		<h3 class="brd-respondent-title">Respondent</h3>
+		<div class="brd-respondent-fields">
+			<div class="brd-field"><label>Name</label><p>{{ session.respondent_name }}</p></div>
+			<div class="brd-field"><label>Email</label><p>{{ session.respondent_email }}</p></div>
+			<div class="brd-field"><label>Role</label><p>{{ session.respondent_role or '—' }}</p></div>
+		</div>
+	</div>
+	{% endif %}
+
+	<!-- Section Navigation (TOC) -->
+	<div class="brd-toc" id="brd-toc">
+		<h3 class="brd-toc-heading">Sections</h3>
+		<div class="brd-toc-grid">
+			{% for sec in sections %}
+			<a class="brd-toc-item" href="#section-{{ sec.number }}" data-section="{{ sec.number }}">
+				<span class="brd-toc-num">{{ "%02d"|format(sec.number) }}</span>
+				<span class="brd-toc-label">{{ sec.title }}</span>
+				<span class="brd-toc-dot {% if sec.answered == sec.total and sec.total > 0 %}brd-toc-done{% endif %}" data-section-dot="{{ sec.number }}"></span>
+			</a>
+			{% endfor %}
+		</div>
+	</div>
+
+	<!-- Main Content -->
+	<div class="brd-main">
+		{% set current_section = [0] %}
+		{% set current_subsection = [''] %}
+
+		{% for r in responses %}
+		{# Section header #}
+		{% if r.section_number != current_section[0] %}
+			{% if current_section[0] != 0 %}
+			<!-- Nav buttons for previous section -->
+			<div class="brd-nav-buttons">
+				{% if current_section[0] > 1 %}
+				<a class="brd-btn brd-btn-outline brd-btn-nav" href="#section-{{ current_section[0] - 1 }}">&larr; Previous</a>
+				{% else %}<span></span>{% endif %}
+				<a class="brd-btn brd-btn-outline brd-btn-nav" href="#section-{{ r.section_number }}">Next &rarr;</a>
+			</div>
+			</div><!-- close previous .brd-section -->
+			{% endif %}
+
+			{% if current_section.append(r.section_number) %}{% endif %}
+			{% if current_section.pop(0) is not none %}{% endif %}
+			{% if current_subsection.append('') %}{% endif %}
+			{% if current_subsection.pop(0) is not none %}{% endif %}
+
+			<div class="brd-section" id="section-{{ r.section_number }}">
+			<div class="brd-section-title">
+				<h2><span class="brd-section-num">{{ "%02d"|format(r.section_number) }}</span> {{ r.section }}</h2>
+			</div>
+		{% endif %}
+
+		{# Subsection divider #}
+		{% if r.subsection and r.subsection != current_subsection[0] %}
+			{% if current_subsection.append(r.subsection) %}{% endif %}
+			{% if current_subsection.pop(0) is not none %}{% endif %}
+			<div class="brd-subsection">{{ r.subsection }}</div>
+		{% endif %}
+
+		{# Question Card #}
+		<div class="brd-q-block {% if r.priority == 'Critical' %}brd-q-critical{% elif r.priority == 'Important' %}brd-q-important{% endif %}" data-response-name="{{ r.name }}">
+			<div class="brd-q-header">
+				<span class="brd-q-text">{{ r.question_text }}</span>
+				<span class="brd-q-badges">
+					{% if r.priority == 'Critical' %}<span class="brd-badge brd-badge-critical">CRITICAL</span>{% endif %}
+					{% if r.priority == 'Important' %}<span class="brd-badge brd-badge-important">IMPORTANT</span>{% endif %}
+					{% if r.erp_reference %}<span class="brd-ref-tag">{{ r.erp_reference }}</span>{% endif %}
+				</span>
+			</div>
+
+			{% if r.help_text %}
+			<div class="brd-q-help">{{ r.help_text }}</div>
+			{% endif %}
+
+			<div class="brd-q-input">
+				{% if r.question_type == 'Text' %}
+				<textarea class="brd-textarea" data-field="response_text" {% if is_submitted %}disabled{% endif %}
+					placeholder="Type your answer here...">{{ r.response_text or '' }}</textarea>
+
+				{% elif r.question_type == 'Single Select' %}
+				<div class="brd-radio-group">
+					{% for opt in (r.options or '').split('\n') %}
+					{% if opt.strip() %}
+					<label class="brd-radio-label">
+						<input type="radio" name="radio-{{ r.name }}" value="{{ opt.strip() }}"
+							data-field="response_single"
+							{% if r.response_single == opt.strip() %}checked{% endif %}
+							{% if is_submitted %}disabled{% endif %}>
+						<span>{{ opt.strip() }}</span>
+					</label>
+					{% endif %}
+					{% endfor %}
+				</div>
+
+				{% elif r.question_type == 'Multi Select' %}
+				{% set selected = (r.response_multi or '[]') %}
+				<div class="brd-checkbox-group">
+					{% for opt in (r.options or '').split('\n') %}
+					{% if opt.strip() %}
+					<label class="brd-checkbox-label">
+						<input type="checkbox" value="{{ opt.strip() }}"
+							data-field="response_multi" data-response-name="{{ r.name }}"
+							{% if opt.strip() in selected %}checked{% endif %}
+							{% if is_submitted %}disabled{% endif %}>
+						<span>{{ opt.strip() }}</span>
+					</label>
+					{% endif %}
+					{% endfor %}
+				</div>
+				{% endif %}
+			</div>
+		</div>
+		{% endfor %}
+
+		{# Nav buttons for last section #}
+		{% if responses %}
+		<div class="brd-nav-buttons">
+			{% if current_section[0] > 1 %}
+			<a class="brd-btn brd-btn-outline brd-btn-nav" href="#section-{{ current_section[0] - 1 }}">&larr; Previous</a>
+			{% else %}<span></span>{% endif %}
+			<span></span>
+		</div>
+		</div><!-- close last .brd-section -->
+		{% endif %}
+	</div>
+
+	<!-- Footer -->
+	<div class="brd-footer">
+		<p>Powered by <a href="https://quarkcs.com" target="_blank">Quark Cyber Systems</a> &middot; BRD Tool</p>
+	</div>
+</div>
+
+<script>
+	window.brd_responses = {{ responses_json }};
+	window.brd_sections = {{ sections_json }};
+</script>
+<script src="/assets/brd_tool/js/brd_portal.js"></script>
+{% endif %}
+{% endblock %}

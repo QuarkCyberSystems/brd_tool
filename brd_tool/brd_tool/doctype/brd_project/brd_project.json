@@ -1,0 +1,105 @@
+{
+ "actions": [],
+ "autoname": "field:project_name",
+ "creation": "2026-03-18 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "project_name",
+  "client_name",
+  "client_email",
+  "column_break_info",
+  "client_company",
+  "assigned_consultant",
+  "status",
+  "section_break_notes",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Project Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "client_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Client Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "client_email",
+   "fieldtype": "Data",
+   "label": "Client Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_info",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "client_company",
+   "fieldtype": "Data",
+   "label": "Client Company"
+  },
+  {
+   "fieldname": "assigned_consultant",
+   "fieldtype": "Link",
+   "label": "Assigned Consultant",
+   "options": "User"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nCompleted\nOn Hold"
+  },
+  {
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [
+  {
+   "link_doctype": "BRD Session",
+   "link_fieldname": "project"
+  }
+ ],
+ "modified": "2026-03-18 00:00:00",
+ "modified_by": "Administrator",
+ "module": "BRD Tool",
+ "name": "BRD Project",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

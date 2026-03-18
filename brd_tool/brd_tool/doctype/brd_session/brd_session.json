@@ -1,0 +1,159 @@
+{
+ "actions": [],
+ "autoname": "format:BRD-{project}-{####}",
+ "creation": "2026-03-18 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "session_title",
+  "project",
+  "template",
+  "column_break_info",
+  "status",
+  "access_key",
+  "progress",
+  "section_break_respondent",
+  "respondent_name",
+  "respondent_email",
+  "column_break_respondent",
+  "respondent_role",
+  "session_date",
+  "submitted_on",
+  "section_break_responses",
+  "responses",
+  "section_break_notes",
+  "consultant_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "session_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Session Title"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Project",
+   "options": "BRD Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Template",
+   "options": "BRD Module Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_info",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nIn Progress\nSubmitted\nReviewed"
+  },
+  {
+   "fieldname": "access_key",
+   "fieldtype": "Data",
+   "label": "Access Key",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "progress",
+   "fieldtype": "Percent",
+   "label": "Progress",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_respondent",
+   "fieldtype": "Section Break",
+   "label": "Respondent Information"
+  },
+  {
+   "fieldname": "respondent_name",
+   "fieldtype": "Data",
+   "label": "Respondent Name"
+  },
+  {
+   "fieldname": "respondent_email",
+   "fieldtype": "Data",
+   "label": "Respondent Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_respondent",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "respondent_role",
+   "fieldtype": "Data",
+   "label": "Respondent Role"
+  },
+  {
+   "fieldname": "session_date",
+   "fieldtype": "Date",
+   "label": "Session Date"
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_responses",
+   "fieldtype": "Section Break",
+   "label": "Responses"
+  },
+  {
+   "fieldname": "responses",
+   "fieldtype": "Table",
+   "label": "Responses",
+   "options": "BRD Response"
+  },
+  {
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break",
+   "label": "Consultant Notes"
+  },
+  {
+   "fieldname": "consultant_notes",
+   "fieldtype": "Text Editor",
+   "label": "Consultant Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-03-18 00:00:00",
+ "modified_by": "Administrator",
+ "module": "BRD Tool",
+ "name": "BRD Session",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

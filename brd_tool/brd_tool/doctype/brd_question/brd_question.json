@@ -1,0 +1,105 @@
+{
+ "actions": [],
+ "creation": "2026-03-18 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section",
+  "section_number",
+  "subsection",
+  "question_text",
+  "column_break_opts",
+  "question_type",
+  "options",
+  "is_required",
+  "column_break_meta",
+  "priority",
+  "erp_reference",
+  "help_text"
+ ],
+ "fields": [
+  {
+   "fieldname": "section",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Section Number"
+  },
+  {
+   "fieldname": "subsection",
+   "fieldtype": "Data",
+   "label": "Subsection"
+  },
+  {
+   "fieldname": "question_text",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question Text",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_opts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Text",
+   "fieldname": "question_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Question Type",
+   "options": "Text\nSingle Select\nMulti Select",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.question_type !== 'Text'",
+   "description": "One option per line",
+   "fieldname": "options",
+   "fieldtype": "Small Text",
+   "label": "Options"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_required",
+   "fieldtype": "Check",
+   "label": "Is Required"
+  },
+  {
+   "fieldname": "column_break_meta",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority",
+   "options": "\nCritical\nImportant"
+  },
+  {
+   "fieldname": "erp_reference",
+   "fieldtype": "Data",
+   "label": "ERP Reference"
+  },
+  {
+   "fieldname": "help_text",
+   "fieldtype": "Small Text",
+   "label": "Help Text"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-18 00:00:00",
+ "modified_by": "Administrator",
+ "module": "BRD Tool",
+ "name": "BRD Question",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
