@@ -2,11 +2,21 @@ import frappe
 
 
 def after_install():
-	"""Seed the Accounting BRD template after app install."""
-	if frappe.db.exists("BRD Module Template", "Accounting BRD v1.0"):
-		return
+	"""Seed BRD templates after app install. Skips any that already exist."""
+	if not frappe.db.exists("BRD Module Template", "Accounting BRD v1.0"):
+		seed_accounting_template()
 
-	seed_accounting_template()
+	if not frappe.db.exists("BRD Module Template", "Assets BRD v1.0"):
+		seed_assets_template()
+
+	if not frappe.db.exists("BRD Module Template", "Buying BRD v1.0"):
+		seed_buying_template()
+
+	if not frappe.db.exists("BRD Module Template", "Selling BRD v1.0"):
+		seed_selling_template()
+
+	if not frappe.db.exists("BRD Module Template", "Stock BRD v1.0"):
+		seed_stock_template()
 
 
 def seed_accounting_template():
@@ -311,6 +321,1020 @@ def get_accounting_questions():
 		_q(s, section, None, "Any known pain points with the current system?", "Text", priority="Important"),
 		_q(s, section, None, "Any specific compliance or regulatory requirements?", "Text"),
 		_q(s, section, None, "Timeline or deadline constraints for go-live?", "Text", priority="Important"),
+		_q(s, section, None, "Any additional notes or comments?", "Text"),
+	])
+
+	return questions
+
+
+def seed_assets_template():
+	"""Create the comprehensive Assets BRD template with all sections and questions."""
+	template = frappe.new_doc("BRD Module Template")
+	template.template_name = "Assets BRD v1.0"
+	template.module_name = "Assets"
+	template.version = "1.0"
+	template.description = "Comprehensive Business Requirements Document for ERPNext Assets module implementation. Covers 20 sections including asset policy, depreciation, CWIP, capitalization, maintenance, repair, disposal, insurance, and more."
+	template.is_active = 1
+
+	questions = get_assets_questions()
+	for q in questions:
+		template.append("questions", q)
+
+	template.insert(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def get_assets_questions():
+	"""Return the full list of Assets BRD questions."""
+	questions = []
+
+	# Section 1: Asset Policy & Classification
+	s = 1
+	section = "Asset Policy & Classification"
+	questions.extend([
+		_q(s, section, None, "Does your organization have a formal fixed asset capitalization policy?", "Single Select", options="Yes\nNo", required=1, priority="Critical"),
+		_q(s, section, None, "What is the minimum capitalization threshold (amount below which items are expensed)?", "Text", priority="Critical"),
+		_q(s, section, None, "How do you currently track fixed assets?", "Single Select", options="Spreadsheet\nLegacy System\nManual Register\nNo formal tracking", priority="Important"),
+		_q(s, section, None, "Approximately how many fixed assets does the organization own?", "Text", priority="Important"),
+		_q(s, section, None, "Do you categorize assets by type (e.g. Furniture, Vehicles, IT Equipment, Plant & Machinery)?", "Single Select", options="Yes\nNo", erp_ref="Asset Category"),
+		_q(s, section, None, "List all asset categories you need.", "Text", required=1, erp_ref="Asset Category"),
+		_q(s, section, None, "Do you need sub-categories within main asset categories?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you assign unique asset numbers/tags to each asset?", "Single Select", options="Yes\nNo", erp_ref="Asset.naming_series"),
+		_q(s, section, None, "Preferred asset naming convention?", "Single Select", options="Manual Entry\nAuto-generated Series\nItem Code Based", erp_ref="Asset.naming_series"),
+	])
+
+	# Section 2: Asset Category Accounts
+	s = 2
+	section = "Asset Category Accounts"
+	questions.extend([
+		_q(s, section, None, "Do you need separate GL accounts per asset category?", "Single Select", options="Yes\nNo", priority="Critical", erp_ref="Asset Category Account"),
+		_q(s, section, None, "For each category, do you maintain separate Fixed Asset, Accumulated Depreciation, and Depreciation Expense accounts?", "Single Select", options="Yes\nNo", priority="Critical", erp_ref="Asset Category Account"),
+		_q(s, section, None, "Do any categories require a Capital Work in Progress (CWIP) account?", "Single Select", options="Yes\nNo", erp_ref="Asset Category Account.capital_work_in_progress_account"),
+		_q(s, section, None, "Will you use the same account structure across all companies, or different per company?", "Single Select", options="Same for all\nDifferent per company"),
+	])
+
+	# Section 3: Asset Locations & Custodians
+	s = 3
+	section = "Asset Locations & Custodians"
+	questions.extend([
+		_q(s, section, None, "Do you track where each asset is physically located?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Location"),
+		_q(s, section, None, "List your asset locations (buildings, floors, branches, warehouses, etc.).", "Text", erp_ref="Location"),
+		_q(s, section, None, "Do you need a hierarchical location structure (e.g. Building > Floor > Room)?", "Single Select", options="Yes\nNo", erp_ref="Location.parent_location"),
+		_q(s, section, None, "Do you assign custodians (responsible employees) to assets?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Asset.custodian"),
+		_q(s, section, None, "Should custodian changes be tracked and audited?", "Single Select", options="Yes\nNo", erp_ref="Asset Movement"),
+		_q(s, section, None, "Do you need geolocation tracking for assets (GPS coordinates)?", "Single Select", options="Yes\nNo", erp_ref="Location.latitude"),
+	])
+
+	# Section 4: Asset Acquisition
+	s = 4
+	section = "Asset Acquisition"
+	questions.extend([
+		_q(s, section, None, "How are assets typically acquired?", "Multi Select", options="Purchase Order → Receipt\nDirect Purchase Invoice\nSelf-constructed / Capitalized\nDonated / Gifted\nLeased", priority="Critical", erp_ref="Asset"),
+		_q(s, section, None, "Do you receive assets through Purchase Receipts or directly via Purchase Invoices?", "Single Select", options="Purchase Receipt\nPurchase Invoice\nBoth", erp_ref="Asset"),
+		_q(s, section, None, "Do you need to track the supplier/vendor for each asset?", "Single Select", options="Yes\nNo", erp_ref="Asset.supplier"),
+		_q(s, section, None, "Do you need to link assets to the original purchase document?", "Single Select", options="Yes\nNo", erp_ref="Asset.purchase_receipt"),
+		_q(s, section, None, "Do you acquire assets in bulk (multiple units of same item)?", "Single Select", options="Yes\nNo", erp_ref="Asset.asset_quantity"),
+		_q(s, section, None, "Are there assets owned by third parties but in your possession?", "Single Select", options="Yes\nNo", erp_ref="Asset.asset_owner"),
+		_q(s, section, None, "If yes, who owns them?", "Single Select", options="Supplier\nCustomer\nNot applicable", erp_ref="Asset.asset_owner"),
+	])
+
+	# Section 5: Depreciation Policy
+	s = 5
+	section = "Depreciation Policy"
+	questions.extend([
+		_q(s, section, None, "Do you calculate depreciation on your fixed assets?", "Single Select", options="Yes\nNo", required=1, priority="Critical", erp_ref="Asset.calculate_depreciation"),
+		_q(s, section, None, "Which depreciation method(s) do you use?", "Multi Select", options="Straight Line\nWritten Down Value (WDV)\nDouble Declining Balance\nManual", priority="Critical", erp_ref="Asset Finance Book.depreciation_method"),
+		_q(s, section, None, "Is the depreciation method consistent across all asset categories, or does it vary?", "Single Select", options="Same for all\nVaries by category"),
+		_q(s, section, None, "What is the typical useful life for each asset category (in months)? List per category.", "Text", priority="Important", erp_ref="Asset Finance Book.total_number_of_depreciations"),
+		_q(s, section, None, "How frequently do you book depreciation?", "Single Select", options="Monthly\nQuarterly\nAnnually", priority="Important", erp_ref="Asset Finance Book.frequency_of_depreciation"),
+		_q(s, section, None, "Do you use daily pro-rata depreciation (based on exact days in month)?", "Single Select", options="Yes\nNo", erp_ref="Asset Finance Book.daily_prorata_based"),
+		_q(s, section, None, "Do you assign a salvage/residual value to assets?", "Single Select", options="Yes\nNo", erp_ref="Asset Finance Book.expected_value_after_useful_life"),
+		_q(s, section, None, "If yes, is it a fixed amount or percentage of cost?", "Single Select", options="Fixed Amount\nPercentage\nNot applicable", erp_ref="Asset Finance Book.salvage_value_percentage"),
+		_q(s, section, None, "Should depreciation journal entries be posted automatically on schedule?", "Single Select", options="Yes - automatic\nNo - manual posting", priority="Important", erp_ref="Accounts Settings.book_asset_depreciation_entry_automatically"),
+		_q(s, section, None, "Do you have existing assets with prior accumulated depreciation to import?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Asset.opening_accumulated_depreciation"),
+	])
+
+	# Section 6: Multi-Finance Book Depreciation
+	s = 6
+	section = "Multi-Finance Book Depreciation"
+	questions.extend([
+		_q(s, section, None, "Do you maintain more than one set of books (e.g. statutory vs. tax vs. management)?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Finance Book"),
+		_q(s, section, None, "If yes, list the finance books needed.", "Text", erp_ref="Finance Book"),
+		_q(s, section, None, "Do different books use different depreciation methods or useful lives for the same asset?", "Single Select", options="Yes\nNo", erp_ref="Asset Finance Book"),
+		_q(s, section, None, "Which finance book should be used for default/primary reporting?", "Text", erp_ref="Company.default_finance_book"),
+	])
+
+	# Section 7: Shift-Based Depreciation
+	s = 7
+	section = "Shift-Based Depreciation"
+	questions.extend([
+		_q(s, section, None, "Do any of your assets operate in multiple shifts (e.g. manufacturing equipment)?", "Single Select", options="Yes\nNo", erp_ref="Asset Shift Factor"),
+		_q(s, section, None, "If yes, do you adjust depreciation based on shift utilization?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "What shift factors do you use? (e.g. Single=1.0, Double=1.5, Triple=2.0)", "Text", erp_ref="Asset Shift Factor.shift_factor"),
+		_q(s, section, None, "Do shift allocations change periodically?", "Single Select", options="Yes\nNo", erp_ref="Asset Shift Allocation"),
+	])
+
+	# Section 8: Capital Work in Progress (CWIP)
+	s = 8
+	section = "Capital Work in Progress (CWIP)"
+	questions.extend([
+		_q(s, section, None, "Do you have assets under construction or assembly before they are ready for use?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Asset Category.enable_cwip_accounting"),
+		_q(s, section, None, "Do you need CWIP accounting (accumulate costs until asset is available for use)?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Asset Category.enable_cwip_accounting"),
+		_q(s, section, None, "What types of costs are capitalized during construction?", "Multi Select", options="Material\nLabour\nContractor Services\nOverheads\nBorrowing Costs"),
+		_q(s, section, None, "When is a CWIP asset transferred to the fixed asset register?", "Single Select", options="On completion certificate\nOn available-for-use date\nOther"),
+		_q(s, section, None, "Do you need to track CWIP by project?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 9: Asset Capitalization (Composite Assets)
+	s = 9
+	section = "Asset Capitalization (Composite Assets)"
+	questions.extend([
+		_q(s, section, None, "Do you create composite assets from multiple components (stock items + existing assets + services)?", "Single Select", options="Yes\nNo", erp_ref="Asset Capitalization"),
+		_q(s, section, None, "Do you consume stock/inventory items during asset construction?", "Single Select", options="Yes\nNo", erp_ref="Asset Capitalization Stock Item"),
+		_q(s, section, None, "Do you merge existing assets into a new composite asset?", "Single Select", options="Yes\nNo", erp_ref="Asset Capitalization Asset Item"),
+		_q(s, section, None, "Do you include service/contractor expenses in the capitalized cost?", "Single Select", options="Yes\nNo", erp_ref="Asset Capitalization Service Item"),
+		_q(s, section, None, "How do you determine the value of consumed stock items?", "Single Select", options="Warehouse valuation rate\nManual entry\nNot applicable"),
+	])
+
+	# Section 10: Asset Maintenance
+	s = 10
+	section = "Asset Maintenance"
+	questions.extend([
+		_q(s, section, None, "Do you perform preventive maintenance on assets?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Asset Maintenance"),
+		_q(s, section, None, "What types of maintenance do you perform?", "Multi Select", options="Preventive Maintenance\nCalibration\nSafety Inspection\nCleaning\nSoftware Updates", erp_ref="Asset Maintenance Task.maintenance_type"),
+		_q(s, section, None, "Do you need scheduled maintenance with recurring periodicities?", "Single Select", options="Yes\nNo", erp_ref="Asset Maintenance Task.periodicity"),
+		_q(s, section, None, "What periodicities are needed?", "Multi Select", options="Daily\nWeekly\nMonthly\nQuarterly\nHalf-yearly\nYearly\n2 Yearly\n3 Yearly", erp_ref="Asset Maintenance Task.periodicity"),
+		_q(s, section, None, "Do you assign maintenance to specific teams or individuals?", "Single Select", options="Teams\nIndividuals\nBoth", erp_ref="Asset Maintenance Team"),
+		_q(s, section, None, "Do you require maintenance completion certificates?", "Single Select", options="Yes\nNo", erp_ref="Asset Maintenance Task.certificate_required"),
+		_q(s, section, None, "Do you need overdue maintenance alerts/notifications?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you track maintenance history/logs?", "Single Select", options="Yes\nNo", erp_ref="Asset Maintenance Log"),
+	])
+
+	# Section 11: Asset Repair
+	s = 11
+	section = "Asset Repair"
+	questions.extend([
+		_q(s, section, None, "Do you track asset repairs separately from maintenance?", "Single Select", options="Yes\nNo", erp_ref="Asset Repair"),
+		_q(s, section, None, "Do you consume stock/spare parts during repairs?", "Single Select", options="Yes\nNo", erp_ref="Asset Repair.stock_consumption"),
+		_q(s, section, None, "Should repair costs be capitalized (added to asset value)?", "Single Select", options="Always\nSometimes\nNever", erp_ref="Asset Repair.capitalize_repair_cost"),
+		_q(s, section, None, "Can repairs extend the useful life of an asset?", "Single Select", options="Yes\nNo", erp_ref="Asset Repair.increase_in_asset_life"),
+		_q(s, section, None, "Do you track asset downtime during repairs?", "Single Select", options="Yes\nNo", erp_ref="Asset Repair.downtime"),
+		_q(s, section, None, "Do repairs need to be linked to Purchase Invoices for cost tracking?", "Single Select", options="Yes\nNo", erp_ref="Asset Repair.purchase_invoice"),
+	])
+
+	# Section 12: Asset Movement & Transfer
+	s = 12
+	section = "Asset Movement & Transfer"
+	questions.extend([
+		_q(s, section, None, "Do you transfer assets between locations?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Asset Movement"),
+		_q(s, section, None, "Do you transfer asset custody between employees?", "Single Select", options="Yes\nNo", erp_ref="Asset Movement Item.to_employee"),
+		_q(s, section, None, "What triggers an asset movement?", "Multi Select", options="Department transfer\nOffice relocation\nProject assignment\nEmployee change\nRepair / maintenance"),
+		_q(s, section, None, "Do asset movements need approval before execution?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need a full audit trail of all asset movements?", "Single Select", options="Yes\nNo", erp_ref="Asset Activity"),
+	])
+
+	# Section 13: Asset Disposal — Sale & Scrap
+	s = 13
+	section = "Asset Disposal — Sale & Scrap"
+	questions.extend([
+		_q(s, section, None, "How do you typically dispose of assets?", "Multi Select", options="Sale to third party\nInternal transfer\nScrapping / write-off\nDonation\nTrade-in", priority="Important"),
+		_q(s, section, None, "For asset sales, do you create a Sales Invoice?", "Single Select", options="Yes\nNo", erp_ref="Sales Invoice"),
+		_q(s, section, None, "Do you need to track gain/loss on disposal?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "What account should disposal gain/loss be posted to?", "Text"),
+		_q(s, section, None, "Do asset disposals need approval?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need to track reason for scrapping?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 14: Asset Value Adjustment & Impairment
+	s = 14
+	section = "Asset Value Adjustment & Impairment"
+	questions.extend([
+		_q(s, section, None, "Do you perform asset revaluations or impairment assessments?", "Single Select", options="Yes\nNo", erp_ref="Asset Value Adjustment"),
+		_q(s, section, None, "How often are revaluations done?", "Single Select", options="Annually\nAs needed\nNever"),
+		_q(s, section, None, "Do you need to record impairment losses?", "Single Select", options="Yes\nNo", erp_ref="Asset Value Adjustment"),
+		_q(s, section, None, "Should value adjustments automatically create journal entries?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 15: Asset Insurance
+	s = 15
+	section = "Asset Insurance"
+	questions.extend([
+		_q(s, section, None, "Do you insure your fixed assets?", "Single Select", options="Yes\nNo", erp_ref="Asset.policy_number"),
+		_q(s, section, None, "Do you need to track insurance details per asset (policy number, insurer, insured value)?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need alerts for insurance policy expiry?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Is the insured value the same as the book value or a separate valuation?", "Single Select", options="Same as book value\nSeparate valuation\nReplacement cost"),
+	])
+
+	# Section 16: Fixed Asset Register & Reporting
+	s = 16
+	section = "Fixed Asset Register & Reporting"
+	questions.extend([
+		_q(s, section, None, "Which asset reports do you need?", "Multi Select", options="Fixed Asset Register\nDepreciation Schedule\nAsset Movement History\nMaintenance Schedule\nAsset Activity Log\nCategory-wise Summary", priority="Important"),
+		_q(s, section, None, "Do you need reports filtered by location, department, or custodian?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need asset barcode/QR code labels for physical verification?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you perform periodic physical asset verification?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "If yes, how often?", "Single Select", options="Monthly\nQuarterly\nAnnually\nAd-hoc"),
+		_q(s, section, None, "Do you need consolidated asset reports across multiple companies?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 17: Roles & Permissions
+	s = 17
+	section = "Roles & Permissions"
+	questions.extend([
+		_q(s, section, None, "How many users will manage assets?", "Text", priority="Important"),
+		_q(s, section, None, "List the asset management roles needed (e.g. Asset Manager, Asset User, Maintenance User, Auditor).", "Text", priority="Important"),
+		_q(s, section, None, "Should asset creation be restricted to certain roles?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should depreciation posting be restricted?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should asset disposal be restricted to certain roles?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do auditors need read-only access to the asset register?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 18: Opening Balances & Migration
+	s = 18
+	section = "Opening Balances & Migration"
+	questions.extend([
+		_q(s, section, None, "Do you have existing assets to migrate into the system?", "Single Select", options="Yes\nNo", required=1, priority="Critical"),
+		_q(s, section, None, "Approximately how many assets need to be migrated?", "Text"),
+		_q(s, section, None, "What data is available for each existing asset?", "Multi Select", options="Purchase date\nPurchase cost\nAccumulated depreciation\nCurrent book value\nLocation\nCustodian\nSerial / tag number\nWarranty info"),
+		_q(s, section, None, "What format is the existing asset register in?", "Single Select", options="Excel\nCSV\nLegacy system export\nPaper records"),
+		_q(s, section, None, "Do existing assets have remaining useful life to continue depreciating?", "Single Select", options="Yes\nNo", erp_ref="Asset.is_existing_asset"),
+		_q(s, section, None, "What is the cutover date for asset migration?", "Text", priority="Critical"),
+	])
+
+	# Section 19: Integrations & Automation
+	s = 19
+	section = "Integrations & Automation"
+	questions.extend([
+		_q(s, section, None, "Do you need automatic depreciation posting (no manual intervention)?", "Single Select", options="Yes\nNo", erp_ref="Accounts Settings"),
+		_q(s, section, None, "Do you need email notifications for maintenance due dates?", "Single Select", options="Yes\nNo", erp_ref="Notification"),
+		_q(s, section, None, "Do you need email notifications for insurance expiry?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need integration with a barcode/RFID system for asset tracking?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Any integration with facility management or IoT systems?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Any other asset-related integrations needed?", "Text"),
+	])
+
+	# Section 20: Parking Lot & Open Items
+	s = 20
+	section = "Parking Lot & Open Items"
+	questions.extend([
+		_q(s, section, None, "List any asset management requirements not covered above.", "Text"),
+		_q(s, section, None, "Any known pain points with the current asset tracking process?", "Text", priority="Important"),
+		_q(s, section, None, "Any compliance or regulatory requirements for asset management (e.g. IFRS 16, IAS 16)?", "Text"),
+		_q(s, section, None, "Timeline constraints for asset module go-live?", "Text", priority="Important"),
+		_q(s, section, None, "Any additional notes or comments?", "Text"),
+	])
+
+	return questions
+
+
+def seed_buying_template():
+	"""Create the comprehensive Buying BRD template."""
+	template = frappe.new_doc("BRD Module Template")
+	template.template_name = "Buying BRD v1.0"
+	template.module_name = "Buying"
+	template.version = "1.0"
+	template.description = "Comprehensive Business Requirements Document for ERPNext Buying module implementation. Covers 18 sections including procurement cycle, supplier management, RFQ, purchase orders, subcontracting, supplier scorecards, and more."
+	template.is_active = 1
+
+	questions = get_buying_questions()
+	for q in questions:
+		template.append("questions", q)
+
+	template.insert(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def get_buying_questions():
+	"""Return the full list of Buying BRD questions."""
+	questions = []
+
+	# Section 1: Procurement Policy & Overview
+	s = 1
+	section = "Procurement Policy & Overview"
+	questions.extend([
+		_q(s, section, None, "Does your organization have a formal procurement policy?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "Approximately how many active suppliers do you work with?", "Text", priority="Important"),
+		_q(s, section, None, "Approximately how many purchase orders are raised per month?", "Text"),
+		_q(s, section, None, "What is the current procurement process (manual, spreadsheet, legacy system)?", "Text", priority="Important"),
+		_q(s, section, None, "Do you have a centralized or decentralized purchasing function?", "Single Select", options="Centralized\nDecentralized\nHybrid"),
+		_q(s, section, None, "What types of purchases do you make?", "Multi Select", options="Raw Materials\nFinished Goods\nServices\nCapital Equipment\nConsumables\nSubcontracting", priority="Critical"),
+	])
+
+	# Section 2: Supplier Management
+	s = 2
+	section = "Supplier Management"
+	questions.extend([
+		_q(s, section, None, "How do you classify suppliers?", "Text", erp_ref="Supplier Group"),
+		_q(s, section, None, "List your supplier groups/categories.", "Text", required=1, erp_ref="Supplier Group"),
+		_q(s, section, None, "Do you track supplier type (Company, Individual, Partnership)?", "Single Select", options="Yes\nNo", erp_ref="Supplier.supplier_type"),
+		_q(s, section, None, "Do you maintain preferred/approved supplier lists per item?", "Single Select", options="Yes\nNo", erp_ref="Item Supplier"),
+		_q(s, section, None, "Do you need to block/hold suppliers (e.g. for non-compliance)?", "Single Select", options="Yes\nNo", erp_ref="Supplier.on_hold"),
+		_q(s, section, None, "If yes, what hold types are needed?", "Multi Select", options="Block all transactions\nBlock invoices only\nBlock payments only", erp_ref="Supplier.hold_type"),
+		_q(s, section, None, "Do you track supplier lead times per item?", "Single Select", options="Yes\nNo", erp_ref="Item Supplier.lead_time_days"),
+		_q(s, section, None, "Do you need a supplier self-service portal?", "Single Select", options="Yes\nNo", erp_ref="Supplier.portal_users"),
+		_q(s, section, None, "Do you have internal suppliers (inter-company procurement)?", "Single Select", options="Yes\nNo", erp_ref="Supplier.is_internal_supplier"),
+	])
+
+	# Section 3: Supplier Scorecards
+	s = 3
+	section = "Supplier Scorecards & Evaluation"
+	questions.extend([
+		_q(s, section, None, "Do you evaluate supplier performance?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Supplier Scorecard"),
+		_q(s, section, None, "What KPIs do you use for supplier evaluation?", "Multi Select", options="On-time Delivery\nQuality / Defect Rate\nPricing Competitiveness\nResponsiveness\nCompliance\nCustom Criteria"),
+		_q(s, section, None, "How often are supplier evaluations performed?", "Single Select", options="Weekly\nMonthly\nQuarterly\nAnnually", erp_ref="Supplier Scorecard.period"),
+		_q(s, section, None, "Should poor-performing suppliers be automatically blocked from new POs/RFQs?", "Single Select", options="Yes - block\nYes - warn only\nNo", erp_ref="Supplier.prevent_pos"),
+		_q(s, section, None, "Do you need supplier scorecard reports for management review?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 4: Material Requests
+	s = 4
+	section = "Material Requests & Requisitions"
+	questions.extend([
+		_q(s, section, None, "Do you use formal material/purchase requisitions?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Material Request"),
+		_q(s, section, None, "What types of material requests do you raise?", "Multi Select", options="Purchase\nMaterial Transfer\nMaterial Issue\nManufacture\nCustomer Provided", erp_ref="Material Request.material_request_type"),
+		_q(s, section, None, "Do material requests need approval before conversion to PO?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "If yes, describe the approval levels (e.g. amount thresholds, roles).", "Text"),
+		_q(s, section, None, "Should material requests be auto-created when stock falls below reorder level?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.auto_indent"),
+		_q(s, section, None, "Do you need to consolidate multiple material requests into a single PO?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 5: Request for Quotation (RFQ)
+	s = 5
+	section = "Request for Quotation (RFQ)"
+	questions.extend([
+		_q(s, section, None, "Do you send RFQs to suppliers before placing orders?", "Single Select", options="Always\nSometimes\nNever", erp_ref="Request for Quotation"),
+		_q(s, section, None, "How many suppliers do you typically invite per RFQ?", "Text"),
+		_q(s, section, None, "Do you need to email RFQs directly from the system?", "Single Select", options="Yes\nNo", erp_ref="Request for Quotation.send_email"),
+		_q(s, section, None, "Do you need to attach documents (specs, drawings) to RFQs?", "Single Select", options="Yes\nNo", erp_ref="Request for Quotation.send_attached_files"),
+		_q(s, section, None, "Do you need side-by-side supplier quotation comparison?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should suppliers respond via a portal or email?", "Single Select", options="Portal\nEmail\nBoth"),
+	])
+
+	# Section 6: Supplier Quotations
+	s = 6
+	section = "Supplier Quotations"
+	questions.extend([
+		_q(s, section, None, "Do you track supplier quotations in a system?", "Single Select", options="Yes\nNo", erp_ref="Supplier Quotation"),
+		_q(s, section, None, "Do you need to track quotation validity/expiry dates?", "Single Select", options="Yes\nNo", erp_ref="Supplier Quotation.valid_till"),
+		_q(s, section, None, "Do you track supplier-specific part numbers?", "Single Select", options="Yes\nNo", erp_ref="Supplier Quotation Item.supplier_part_no"),
+		_q(s, section, None, "Do you need to track lead times per quotation item?", "Single Select", options="Yes\nNo", erp_ref="Supplier Quotation Item.lead_time_days"),
+	])
+
+	# Section 7: Purchase Orders
+	s = 7
+	section = "Purchase Orders"
+	questions.extend([
+		_q(s, section, None, "Is a Purchase Order mandatory before receiving goods?", "Single Select", options="Yes\nNo", required=1, priority="Critical", erp_ref="Buying Settings.po_required"),
+		_q(s, section, None, "Is a Purchase Order mandatory before creating a Purchase Invoice?", "Single Select", options="Yes\nNo", erp_ref="Buying Settings.po_required"),
+		_q(s, section, None, "Do purchase orders need approval workflows?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "If yes, describe the approval levels (e.g. amount thresholds, roles).", "Text"),
+		_q(s, section, None, "Do you track the customer PO/order confirmation number on purchase orders?", "Single Select", options="Yes\nNo", erp_ref="Purchase Order.order_confirmation_no"),
+		_q(s, section, None, "Do you need to set expected delivery dates per line item?", "Single Select", options="Yes\nNo", erp_ref="Purchase Order Item.expected_delivery_date"),
+		_q(s, section, None, "Should the system enforce rate consistency from quotation through to invoice?", "Single Select", options="Yes - Stop\nYes - Warn only\nNo", erp_ref="Buying Settings.maintain_same_rate"),
+		_q(s, section, None, "Do you use drop shipping (supplier ships directly to customer)?", "Single Select", options="Yes\nNo", erp_ref="Purchase Order.drop_ship"),
+		_q(s, section, None, "Do you need to place POs on hold?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 8: Purchase Receipt & Goods Receipt
+	s = 8
+	section = "Purchase Receipt & Goods Receipt"
+	questions.extend([
+		_q(s, section, None, "Is a Purchase Receipt mandatory before creating a Purchase Invoice?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Buying Settings.pr_required"),
+		_q(s, section, None, "Do you need 3-way matching (PO → Receipt → Invoice)?", "Single Select", options="Yes\nNo", priority="Critical"),
+		_q(s, section, None, "Do you have a separate goods receiving / warehouse team?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you inspect goods on receipt (quality inspection)?", "Single Select", options="Always\nSometimes\nNever"),
+		_q(s, section, None, "Do you need to handle partial receipts against a PO?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you accept over-delivery above PO quantity?", "Single Select", options="Yes - with tolerance %\nNo - strict", erp_ref="Stock Settings.over_delivery_receipt_allowance"),
+		_q(s, section, None, "Do you have a rejected goods warehouse?", "Single Select", options="Yes\nNo", erp_ref="Purchase Receipt.rejected_warehouse"),
+		_q(s, section, None, "Should rejected quantity be billed?", "Single Select", options="Yes\nNo", erp_ref="Buying Settings.bill_for_rejected_quantity_in_purchase_invoice"),
+	])
+
+	# Section 9: Blanket Orders & Contracts
+	s = 9
+	section = "Blanket Orders & Contracts"
+	questions.extend([
+		_q(s, section, None, "Do you use blanket orders / framework agreements with suppliers?", "Single Select", options="Yes\nNo", erp_ref="Blanket Order"),
+		_q(s, section, None, "If yes, are they based on quantity, value, or time period?", "Multi Select", options="Quantity-based\nValue-based\nTime-period based"),
+		_q(s, section, None, "What overage allowance (%) should be permitted against blanket orders?", "Text", erp_ref="Buying Settings.blanket_order_allowance"),
+		_q(s, section, None, "Do you need to track contract expiry and renewal dates?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 10: Subcontracting
+	s = 10
+	section = "Subcontracting"
+	questions.extend([
+		_q(s, section, None, "Do you subcontract any manufacturing/processing work to suppliers?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Purchase Order.is_subcontracted"),
+		_q(s, section, None, "If yes, describe the subcontracting process.", "Text"),
+		_q(s, section, None, "Do you supply raw materials to the subcontractor?", "Single Select", options="Yes\nNo", erp_ref="Purchase Order Item Supplied"),
+		_q(s, section, None, "How should raw material consumption be calculated?", "Single Select", options="Based on BOM\nBased on Material Transferred\nManual", erp_ref="Buying Settings.backflush_raw_materials_of_subcontract_based_on"),
+		_q(s, section, None, "Do you need to track raw materials at the supplier's warehouse?", "Single Select", options="Yes\nNo", erp_ref="Purchase Order.supplier_warehouse"),
+		_q(s, section, None, "What over-transfer allowance (%) for raw materials to subcontractors?", "Text", erp_ref="Buying Settings.over_transfer_allowance"),
+		_q(s, section, None, "Should subcontracting orders be auto-created from Purchase Orders?", "Single Select", options="Yes\nNo", erp_ref="Buying Settings.auto_create_subcontracting_order"),
+	])
+
+	# Section 11: Purchase Pricing & Taxes
+	s = 11
+	section = "Purchase Pricing & Taxes"
+	questions.extend([
+		_q(s, section, None, "Do you maintain a buying price list?", "Single Select", options="Yes\nNo", erp_ref="Buying Settings.buying_price_list"),
+		_q(s, section, None, "Do you need supplier-specific pricing?", "Single Select", options="Yes\nNo", erp_ref="Item Price"),
+		_q(s, section, None, "Do you track the last purchase rate per item?", "Single Select", options="Yes\nNo", erp_ref="Buying Settings.disable_last_purchase_rate"),
+		_q(s, section, None, "Do you need dynamic pricing rules (volume discounts, date-based pricing)?", "Single Select", options="Yes\nNo", erp_ref="Pricing Rule"),
+		_q(s, section, None, "Do you use purchase tax templates?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Purchase Taxes and Charges Template"),
+		_q(s, section, None, "List the tax types applied on purchases (e.g. VAT 5%, Import Duty, Withholding Tax).", "Text", priority="Critical"),
+		_q(s, section, None, "Do you need Tax Deducted at Source (TDS / withholding tax)?", "Single Select", options="Yes\nNo", erp_ref="Tax Withholding Category"),
+		_q(s, section, None, "Do you use Incoterms for international purchases?", "Single Select", options="Yes\nNo", erp_ref="Purchase Order.incoterm"),
+	])
+
+	# Section 12: Landed Cost
+	s = 12
+	section = "Landed Cost"
+	questions.extend([
+		_q(s, section, None, "Do you need to allocate freight, customs duty, or other charges to purchase cost?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Landed Cost Voucher"),
+		_q(s, section, None, "What types of additional costs are allocated?", "Multi Select", options="Freight / Shipping\nCustoms Duty\nInsurance\nHandling Charges\nInspection Fees\nOther"),
+		_q(s, section, None, "How should charges be distributed across items?", "Single Select", options="By Quantity\nBy Amount\nManual allocation", erp_ref="Landed Cost Voucher.distribute_charges_based_on"),
+		_q(s, section, None, "Should landed cost be automatically set based on Purchase Invoice rate?", "Single Select", options="Yes\nNo", erp_ref="Buying Settings.set_landed_cost_based_on_purchase_invoice_rate"),
+	])
+
+	# Section 13: Multi-Currency Purchasing
+	s = 13
+	section = "Multi-Currency Purchasing"
+	questions.extend([
+		_q(s, section, None, "Do you purchase in multiple currencies?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "If yes, list all purchase currencies.", "Text"),
+		_q(s, section, None, "Should exchange rates be based on transaction date or posting date?", "Single Select", options="Transaction Date\nPosting Date", erp_ref="Buying Settings.use_transaction_date_exchange_rate"),
+		_q(s, section, None, "Do you use a separate price list currency vs. transaction currency?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 14: Purchase Returns
+	s = 14
+	section = "Purchase Returns"
+	questions.extend([
+		_q(s, section, None, "Do you return goods to suppliers?", "Single Select", options="Yes\nNo", erp_ref="Purchase Receipt.is_return"),
+		_q(s, section, None, "How are returns processed (debit note, credit note, replacement)?", "Multi Select", options="Debit Note to Supplier\nCredit Note\nReplacement\nReturn to stock"),
+		_q(s, section, None, "Do returns need approval?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need to track reasons for returns?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 15: Procurement Reporting
+	s = 15
+	section = "Procurement Reporting"
+	questions.extend([
+		_q(s, section, None, "Which procurement reports do you need?", "Multi Select", options="Purchase Analytics\nPurchase Order Trends\nProcurement Tracker\nSupplier Quotation Comparison\nItem-wise Purchase History\nPending Items to Order\nSubcontracted Items to Receive\nSupplier Scorecard Summary", priority="Important"),
+		_q(s, section, None, "Do you need reports on delayed deliveries from suppliers?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need spend analysis by supplier, item group, or cost centre?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need purchase budget vs. actual reports?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 16: Roles & Permissions
+	s = 16
+	section = "Roles & Permissions"
+	questions.extend([
+		_q(s, section, None, "How many users will use the buying module?", "Text", priority="Important"),
+		_q(s, section, None, "List the procurement roles needed (e.g. Purchase Manager, Purchase User, Store Keeper).", "Text", priority="Important"),
+		_q(s, section, None, "Should PO creation be restricted to certain roles?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should only certain roles be able to approve purchase orders?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need amount-based approval limits per role?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 17: Integrations & Automation
+	s = 17
+	section = "Integrations & Automation"
+	questions.extend([
+		_q(s, section, None, "Do you need email notifications for PO approval, receipt, or overdue deliveries?", "Single Select", options="Yes\nNo", erp_ref="Notification"),
+		_q(s, section, None, "Do you need recurring/standing purchase orders?", "Single Select", options="Yes\nNo", erp_ref="Auto Repeat"),
+		_q(s, section, None, "Do you need integration with any e-procurement or supplier portal?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need barcode scanning for goods receipt?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Any other procurement-related integrations needed?", "Text"),
+	])
+
+	# Section 18: Parking Lot & Open Items
+	s = 18
+	section = "Parking Lot & Open Items"
+	questions.extend([
+		_q(s, section, None, "List any procurement requirements not covered above.", "Text"),
+		_q(s, section, None, "Any known pain points with the current procurement process?", "Text", priority="Important"),
+		_q(s, section, None, "Any compliance or regulatory requirements for procurement?", "Text"),
+		_q(s, section, None, "Timeline constraints for buying module go-live?", "Text", priority="Important"),
+		_q(s, section, None, "Any additional notes or comments?", "Text"),
+	])
+
+	return questions
+
+
+def seed_selling_template():
+	"""Create the comprehensive Selling BRD template."""
+	template = frappe.new_doc("BRD Module Template")
+	template.template_name = "Selling BRD v1.0"
+	template.module_name = "Selling"
+	template.version = "1.0"
+	template.description = "Comprehensive Business Requirements Document for ERPNext Selling module implementation. Covers 20 sections including sales cycle, customer management, quotations, sales orders, pricing, commissions, territories, and more."
+	template.is_active = 1
+
+	questions = get_selling_questions()
+	for q in questions:
+		template.append("questions", q)
+
+	template.insert(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def get_selling_questions():
+	"""Return the full list of Selling BRD questions."""
+	questions = []
+
+	# Section 1: Sales Process Overview
+	s = 1
+	section = "Sales Process Overview"
+	questions.extend([
+		_q(s, section, None, "Describe your current sales process from lead to cash collection.", "Text", priority="Critical"),
+		_q(s, section, None, "What types of sales does your company make?", "Multi Select", options="Product Sales\nService Sales\nProject-based Sales\nSubscription / Recurring\nE-commerce", priority="Important"),
+		_q(s, section, None, "Approximately how many sales orders are processed per month?", "Text"),
+		_q(s, section, None, "What is the current system used for sales management?", "Text"),
+		_q(s, section, None, "Do you need different order types?", "Multi Select", options="Sales\nMaintenance\nShopping Cart (E-commerce)", erp_ref="Sales Order.order_type"),
+	])
+
+	# Section 2: Customer Management
+	s = 2
+	section = "Customer Management"
+	questions.extend([
+		_q(s, section, None, "Approximately how many active customers do you have?", "Text", priority="Important"),
+		_q(s, section, None, "How do you classify customers?", "Text", erp_ref="Customer Group"),
+		_q(s, section, None, "List your customer groups/categories.", "Text", required=1, erp_ref="Customer Group"),
+		_q(s, section, None, "Do you need hierarchical customer groups?", "Single Select", options="Yes\nNo", erp_ref="Customer Group.is_group"),
+		_q(s, section, None, "Do you track customer type (Company, Individual, Partnership)?", "Single Select", options="Yes\nNo", erp_ref="Customer.customer_type"),
+		_q(s, section, None, "Do you need customer credit limits?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Customer Credit Limit"),
+		_q(s, section, None, "If yes, are credit limits per company or global?", "Single Select", options="Per Company\nGlobal\nNot applicable"),
+		_q(s, section, None, "Do you have internal customers (inter-company sales)?", "Single Select", options="Yes\nNo", erp_ref="Customer.is_internal_customer"),
+		_q(s, section, None, "Do you need a customer self-service portal?", "Single Select", options="Yes\nNo", erp_ref="Customer.portal_users"),
+		_q(s, section, None, "Do you need to restrict specific items per customer?", "Single Select", options="Yes\nNo", erp_ref="Party Specific Item"),
+	])
+
+	# Section 3: Territory Management
+	s = 3
+	section = "Territory Management"
+	questions.extend([
+		_q(s, section, None, "Do you organize customers by territory/region?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Territory"),
+		_q(s, section, None, "List your territories/regions.", "Text", erp_ref="Territory"),
+		_q(s, section, None, "Do you need a hierarchical territory structure?", "Single Select", options="Yes\nNo", erp_ref="Territory.parent_territory"),
+		_q(s, section, None, "Do you assign territory managers?", "Single Select", options="Yes\nNo", erp_ref="Territory.territory_manager"),
+		_q(s, section, None, "Do you set sales targets by territory?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 4: Quotations
+	s = 4
+	section = "Quotations"
+	questions.extend([
+		_q(s, section, None, "Do you issue formal quotations to customers?", "Single Select", options="Always\nSometimes\nNever", priority="Important", erp_ref="Quotation"),
+		_q(s, section, None, "Can quotations be sent to leads (not yet customers)?", "Single Select", options="Yes\nNo", erp_ref="Quotation.quotation_to"),
+		_q(s, section, None, "Do you track quotation validity/expiry dates?", "Single Select", options="Yes\nNo", erp_ref="Quotation.valid_till"),
+		_q(s, section, None, "Do you need to track lost quotations with reasons?", "Single Select", options="Yes\nNo", erp_ref="Quotation.lost_reasons"),
+		_q(s, section, None, "Do you track competitors on quotations?", "Single Select", options="Yes\nNo", erp_ref="Quotation.competitors"),
+		_q(s, section, None, "Do quotations need approval before sending to customer?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should expired quotations be allowed to convert to Sales Orders?", "Single Select", options="Yes\nNo", erp_ref="Selling Settings.allow_sales_order_creation_for_expired_quotation"),
+	])
+
+	# Section 5: Sales Orders
+	s = 5
+	section = "Sales Orders"
+	questions.extend([
+		_q(s, section, None, "Is a Sales Order mandatory before creating a Delivery Note?", "Single Select", options="Yes\nNo", priority="Critical", erp_ref="Selling Settings.so_required"),
+		_q(s, section, None, "Is a Delivery Note mandatory before creating a Sales Invoice?", "Single Select", options="Yes\nNo", priority="Critical", erp_ref="Selling Settings.dn_required"),
+		_q(s, section, None, "Do Sales Orders need approval workflows?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "If yes, describe the approval levels (e.g. amount thresholds, roles).", "Text"),
+		_q(s, section, None, "Do you track customer PO numbers on Sales Orders?", "Single Select", options="Yes\nNo", erp_ref="Sales Order.po_no"),
+		_q(s, section, None, "Do you need to allow multiple Sales Orders against a single customer PO?", "Single Select", options="Yes\nNo", erp_ref="Selling Settings.allow_against_multiple_purchase_orders"),
+		_q(s, section, None, "Do you need delivery date tracking per line item?", "Single Select", options="Yes\nNo", erp_ref="Sales Order Item.delivery_date"),
+		_q(s, section, None, "Do you skip delivery notes for any order types (direct invoice)?", "Single Select", options="Yes\nNo", erp_ref="Sales Order.skip_delivery_note"),
+		_q(s, section, None, "Do you need to close/re-open Sales Orders?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 6: Pricing & Discounts
+	s = 6
+	section = "Pricing & Discounts"
+	questions.extend([
+		_q(s, section, None, "Do you maintain a selling price list?", "Single Select", options="Yes\nNo", required=1, erp_ref="Selling Settings.selling_price_list"),
+		_q(s, section, None, "Do you need multiple selling price lists (e.g. Retail, Wholesale, Export)?", "Single Select", options="Yes\nNo", erp_ref="Price List"),
+		_q(s, section, None, "Do you need customer-specific pricing?", "Single Select", options="Yes\nNo", erp_ref="Item Price"),
+		_q(s, section, None, "Do you need customer group-level pricing?", "Single Select", options="Yes\nNo", erp_ref="Pricing Rule"),
+		_q(s, section, None, "Do you use dynamic pricing rules (volume discounts, date-based, coupon codes)?", "Single Select", options="Yes\nNo", erp_ref="Pricing Rule"),
+		_q(s, section, None, "If yes, describe your discount/pricing rule structure.", "Text"),
+		_q(s, section, None, "Do you offer free items (buy X get Y free)?", "Single Select", options="Yes\nNo", erp_ref="Pricing Rule"),
+		_q(s, section, None, "Do you use margin-based pricing (cost + margin)?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should the system validate that selling price is above purchase/valuation rate?", "Single Select", options="Yes\nNo", erp_ref="Selling Settings.validate_selling_price"),
+		_q(s, section, None, "Should price list rates be editable on transactions?", "Single Select", options="Yes\nNo", erp_ref="Selling Settings.editable_price_list_rate"),
+		_q(s, section, None, "Should the system enforce rate consistency from quotation through to invoice?", "Single Select", options="Yes - Stop\nYes - Warn only\nNo", erp_ref="Selling Settings.maintain_same_rate"),
+	])
+
+	# Section 7: Product Bundles
+	s = 7
+	section = "Product Bundles"
+	questions.extend([
+		_q(s, section, None, "Do you sell product bundles/kits (a set of items sold as one)?", "Single Select", options="Yes\nNo", erp_ref="Product Bundle"),
+		_q(s, section, None, "If yes, should bundle component rates be editable?", "Single Select", options="Yes\nNo", erp_ref="Selling Settings.editable_bundle_item_rates"),
+		_q(s, section, None, "List your product bundles if known.", "Text"),
+	])
+
+	# Section 8: Blanket Orders
+	s = 8
+	section = "Blanket Orders & Contracts"
+	questions.extend([
+		_q(s, section, None, "Do you use blanket orders / framework agreements with customers?", "Single Select", options="Yes\nNo", erp_ref="Blanket Order"),
+		_q(s, section, None, "If yes, are they based on quantity, value, or time period?", "Multi Select", options="Quantity-based\nValue-based\nTime-period based"),
+		_q(s, section, None, "What overage allowance (%) should be permitted?", "Text", erp_ref="Selling Settings.blanket_order_allowance"),
+	])
+
+	# Section 9: Sales Taxes & Charges
+	s = 9
+	section = "Sales Taxes & Charges"
+	questions.extend([
+		_q(s, section, None, "List the tax types applied on sales (e.g. VAT 5%, Zero-rated, Exempt).", "Text", required=1, priority="Critical", erp_ref="Sales Taxes and Charges Template"),
+		_q(s, section, None, "Do you need separate tax templates per customer or item category?", "Single Select", options="Yes\nNo", erp_ref="Tax Category"),
+		_q(s, section, None, "Do you use shipping rules to auto-calculate freight?", "Single Select", options="Yes\nNo", erp_ref="Shipping Rule"),
+		_q(s, section, None, "Do you use Incoterms for international sales?", "Single Select", options="Yes\nNo", erp_ref="Sales Order.incoterm"),
+		_q(s, section, None, "Do you need Tax Deducted at Source (TDS / withholding tax) on sales?", "Single Select", options="Yes\nNo", erp_ref="Tax Withholding Category"),
+	])
+
+	# Section 10: Sales Commission & Partners
+	s = 10
+	section = "Sales Commission & Partners"
+	questions.extend([
+		_q(s, section, None, "Do you have internal sales personnel who earn commissions?", "Single Select", options="Yes\nNo", erp_ref="Sales Person"),
+		_q(s, section, None, "Do you have external sales partners (agents, dealers, resellers)?", "Single Select", options="Yes\nNo", erp_ref="Sales Partner"),
+		_q(s, section, None, "How is commission calculated?", "Single Select", options="Fixed %\nVariable by item\nTiered / slab-based\nNot applicable"),
+		_q(s, section, None, "Can multiple salespeople share commission on a single order?", "Single Select", options="Yes\nNo", erp_ref="Sales Team"),
+		_q(s, section, None, "Do you set sales targets for salespeople or territories?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "List your sales partner types if applicable (Distributor, Agent, Dealer, etc.).", "Text", erp_ref="Sales Partner Type"),
+	])
+
+	# Section 11: Delivery & Fulfillment
+	s = 11
+	section = "Delivery & Fulfillment"
+	questions.extend([
+		_q(s, section, None, "Do you use Delivery Notes to track goods dispatch?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Delivery Note"),
+		_q(s, section, None, "Do you need partial deliveries against a Sales Order?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you use drop shipping (supplier ships directly to customer)?", "Single Select", options="Yes\nNo", erp_ref="Sales Order Item.delivered_by_supplier"),
+		_q(s, section, None, "Do you need stock reservation for confirmed orders?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Sales Order.reserve_stock"),
+		_q(s, section, None, "Do you track installation after delivery?", "Single Select", options="Yes\nNo", erp_ref="Installation Note"),
+		_q(s, section, None, "Do you need packing slips for shipments?", "Single Select", options="Yes\nNo", erp_ref="Packing Slip"),
+		_q(s, section, None, "Do you need to manage shipping / delivery trips?", "Single Select", options="Yes\nNo", erp_ref="Delivery Trip"),
+	])
+
+	# Section 12: Sales Returns
+	s = 12
+	section = "Sales Returns"
+	questions.extend([
+		_q(s, section, None, "Do customers return goods?", "Single Select", options="Yes\nNo", erp_ref="Delivery Note.is_return"),
+		_q(s, section, None, "How are returns processed?", "Multi Select", options="Credit Note\nReplacement\nReturn to stock\nRefund"),
+		_q(s, section, None, "Should a credit note be auto-created on return?", "Single Select", options="Yes\nNo", erp_ref="Delivery Note.issue_credit_note"),
+		_q(s, section, None, "Do returns need approval?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 13: Multi-Currency Sales
+	s = 13
+	section = "Multi-Currency Sales"
+	questions.extend([
+		_q(s, section, None, "Do you sell in multiple currencies?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "If yes, list all selling currencies.", "Text"),
+		_q(s, section, None, "Do customers have a default currency?", "Single Select", options="Yes\nNo", erp_ref="Customer.default_currency"),
+	])
+
+	# Section 14: Loyalty Programs
+	s = 14
+	section = "Loyalty Programs"
+	questions.extend([
+		_q(s, section, None, "Do you have a customer loyalty program?", "Single Select", options="Yes\nNo", erp_ref="Loyalty Program"),
+		_q(s, section, None, "If yes, describe the loyalty structure (points, tiers, redemption).", "Text"),
+		_q(s, section, None, "Do customers redeem loyalty points on orders?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 15: Subscriptions & Recurring Sales
+	s = 15
+	section = "Subscriptions & Recurring Sales"
+	questions.extend([
+		_q(s, section, None, "Do you have recurring/subscription-based sales?", "Single Select", options="Yes\nNo", erp_ref="Subscription"),
+		_q(s, section, None, "If yes, describe the billing patterns (monthly, quarterly, annual).", "Text"),
+		_q(s, section, None, "Should recurring invoices/orders be auto-created?", "Single Select", options="Yes\nNo", erp_ref="Auto Repeat"),
+	])
+
+	# Section 16: CRM Integration
+	s = 16
+	section = "CRM Integration"
+	questions.extend([
+		_q(s, section, None, "Do you need CRM integration (Lead → Opportunity → Quotation)?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "Do you track marketing campaigns on sales transactions?", "Single Select", options="Yes\nNo", erp_ref="Quotation.campaign"),
+		_q(s, section, None, "Do you need win/loss analysis on quotations?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you track the source of leads/sales?", "Single Select", options="Yes\nNo", erp_ref="Quotation.source"),
+	])
+
+	# Section 17: Sales Reporting
+	s = 17
+	section = "Sales Reporting"
+	questions.extend([
+		_q(s, section, None, "Which sales reports do you need?", "Multi Select", options="Sales Analytics\nSales Order Trends\nQuotation Trends\nTerritory-wise Sales\nSales Person Summary\nCustomer Acquisition & Loyalty\nInactive Customers\nSales Partner Commission\nPayment Terms Status\nCustomer Credit Balance\nLost Quotations", priority="Important"),
+		_q(s, section, None, "Do you need sales target vs. actual reports?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need reports by sales person, territory, and customer group?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need custom sales dashboards?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 18: Roles & Permissions
+	s = 18
+	section = "Roles & Permissions"
+	questions.extend([
+		_q(s, section, None, "How many users will use the selling module?", "Text", priority="Important"),
+		_q(s, section, None, "List the sales roles needed (e.g. Sales Manager, Sales User, Sales Master Manager).", "Text", priority="Important"),
+		_q(s, section, None, "Should quotation/SO creation be restricted by role?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should discount limits vary by role?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need data-level restrictions (e.g. salespeople see only their territory)?", "Single Select", options="Yes\nNo", erp_ref="User Permission"),
+	])
+
+	# Section 19: Integrations & Automation
+	s = 19
+	section = "Integrations & Automation"
+	questions.extend([
+		_q(s, section, None, "Do you need email notifications for quotation/SO events?", "Single Select", options="Yes\nNo", erp_ref="Notification"),
+		_q(s, section, None, "Do you need e-commerce / shopping cart integration?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need SMS notifications for sales events?", "Single Select", options="Yes\nNo", erp_ref="SMS Center"),
+		_q(s, section, None, "Any other sales-related integrations needed?", "Text"),
+	])
+
+	# Section 20: Parking Lot & Open Items
+	s = 20
+	section = "Parking Lot & Open Items"
+	questions.extend([
+		_q(s, section, None, "List any sales requirements not covered above.", "Text"),
+		_q(s, section, None, "Any known pain points with the current sales process?", "Text", priority="Important"),
+		_q(s, section, None, "Any compliance or regulatory requirements for sales?", "Text"),
+		_q(s, section, None, "Timeline constraints for selling module go-live?", "Text", priority="Important"),
+		_q(s, section, None, "Any additional notes or comments?", "Text"),
+	])
+
+	return questions
+
+
+def seed_stock_template():
+	"""Create the comprehensive Stock/Inventory BRD template."""
+	template = frappe.new_doc("BRD Module Template")
+	template.template_name = "Stock BRD v1.0"
+	template.module_name = "Stock"
+	template.version = "1.0"
+	template.description = "Comprehensive Business Requirements Document for ERPNext Stock/Inventory module implementation. Covers 22 sections including item management, warehousing, valuation, serial/batch tracking, quality inspection, stock reconciliation, and more."
+	template.is_active = 1
+
+	questions = get_stock_questions()
+	for q in questions:
+		template.append("questions", q)
+
+	template.insert(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def get_stock_questions():
+	"""Return the full list of Stock/Inventory BRD questions."""
+	questions = []
+
+	# Section 1: Inventory Overview
+	s = 1
+	section = "Inventory Overview"
+	questions.extend([
+		_q(s, section, None, "Describe your current inventory management process.", "Text", priority="Critical"),
+		_q(s, section, None, "Approximately how many stock items (SKUs) do you manage?", "Text", priority="Important"),
+		_q(s, section, None, "What types of items do you stock?", "Multi Select", options="Raw Materials\nFinished Goods\nWork in Progress\nConsumables\nSpare Parts\nPacking Materials\nServices (non-stock)", priority="Important"),
+		_q(s, section, None, "What is the current system used for inventory management?", "Text"),
+		_q(s, section, None, "Do you carry any non-stock items (services, digital products)?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 2: Item Master & Classification
+	s = 2
+	section = "Item Master & Classification"
+	questions.extend([
+		_q(s, section, None, "How are items named/coded?", "Single Select", options="Item Code (manual)\nItem Name\nNaming Series (auto)\nBarcode-based", erp_ref="Stock Settings.item_naming_by"),
+		_q(s, section, None, "What is your item naming convention? Describe the pattern.", "Text"),
+		_q(s, section, None, "List your item groups/categories.", "Text", required=1, erp_ref="Item Group"),
+		_q(s, section, None, "Do you need hierarchical item groups?", "Single Select", options="Yes\nNo", erp_ref="Item Group.is_group"),
+		_q(s, section, None, "Do you classify items by brand?", "Single Select", options="Yes\nNo", erp_ref="Item.brand"),
+		_q(s, section, None, "Do you need item-level images/photos?", "Single Select", options="Yes\nNo", erp_ref="Item.image"),
+		_q(s, section, None, "Do you track manufacturer and manufacturer part number?", "Single Select", options="Yes\nNo", erp_ref="Item Manufacturer"),
+		_q(s, section, None, "Do you need to set end-of-life dates for items?", "Single Select", options="Yes\nNo", erp_ref="Item.end_of_life"),
+		_q(s, section, None, "Do you track HSN/SAC codes for tax purposes?", "Single Select", options="Yes\nNo", erp_ref="Item.gst_hsn_code"),
+	])
+
+	# Section 3: Item Variants
+	s = 3
+	section = "Item Variants"
+	questions.extend([
+		_q(s, section, None, "Do you have items with variants (e.g. same product in different sizes, colours)?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Item.has_variants"),
+		_q(s, section, None, "If yes, what attributes define your variants?", "Text", erp_ref="Item Attribute"),
+		_q(s, section, None, "Are variant attributes text-based (e.g. Red, Blue) or numeric ranges (e.g. 10mm-50mm)?", "Single Select", options="Text-based\nNumeric ranges\nBoth\nNot applicable", erp_ref="Item Attribute.numeric_values"),
+		_q(s, section, None, "Do you need to allow alternative items when primary is out of stock?", "Single Select", options="Yes\nNo", erp_ref="Item.allow_alternative_item"),
+	])
+
+	# Section 4: Units of Measure (UOM)
+	s = 4
+	section = "Units of Measure (UOM)"
+	questions.extend([
+		_q(s, section, None, "What is your primary stock UOM for most items (e.g. Nos, Kg, Metre)?", "Text", required=1, erp_ref="Stock Settings.stock_uom"),
+		_q(s, section, None, "Do you buy and sell in different UOMs than you store?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Item.purchase_uom"),
+		_q(s, section, None, "If yes, list the UOM conversions needed (e.g. 1 Box = 12 Pcs, 1 Pallet = 48 Boxes).", "Text", erp_ref="UOM Conversion Detail"),
+		_q(s, section, None, "Do you need weight tracking per item (weight per unit)?", "Single Select", options="Yes\nNo", erp_ref="Item.weight_per_unit"),
+	])
+
+	# Section 5: Warehouses & Storage
+	s = 5
+	section = "Warehouses & Storage"
+	questions.extend([
+		_q(s, section, None, "How many warehouses/storage locations do you have?", "Text", required=1, priority="Critical", erp_ref="Warehouse"),
+		_q(s, section, None, "List your warehouses (name, type, location).", "Text", erp_ref="Warehouse"),
+		_q(s, section, None, "Do you need a hierarchical warehouse structure (e.g. Site > Building > Zone)?", "Single Select", options="Yes\nNo", erp_ref="Warehouse.parent_warehouse"),
+		_q(s, section, None, "Do you need different warehouse types (Raw Material, Finished Goods, Reject, Transit)?", "Single Select", options="Yes\nNo", erp_ref="Warehouse Type"),
+		_q(s, section, None, "Do you need a separate rejected goods warehouse?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need in-transit warehouses for inter-location transfers?", "Single Select", options="Yes\nNo", erp_ref="Warehouse.default_in_transit_warehouse"),
+		_q(s, section, None, "Do you need bin/location level tracking within a warehouse?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do warehouses map to specific GL accounts?", "Single Select", options="Yes\nNo", erp_ref="Warehouse.account"),
+	])
+
+	# Section 6: Stock Valuation
+	s = 6
+	section = "Stock Valuation"
+	questions.extend([
+		_q(s, section, None, "Which stock valuation method do you use?", "Single Select", options="FIFO (First In First Out)\nMoving Average\nLIFO (Last In First Out)", required=1, priority="Critical", erp_ref="Stock Settings.default_valuation_method"),
+		_q(s, section, None, "Is the valuation method the same for all items, or does it vary?", "Single Select", options="Same for all\nVaries by item", erp_ref="Item.valuation_method"),
+		_q(s, section, None, "Do you use perpetual inventory (every stock movement creates a GL entry)?", "Single Select", options="Yes - Perpetual\nNo - Periodic", priority="Critical", erp_ref="Company.enable_perpetual_inventory"),
+		_q(s, section, None, "Do you need batch-wise valuation (different rates per batch)?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.do_not_use_batchwise_valuation"),
+	])
+
+	# Section 7: Serial Number Tracking
+	s = 7
+	section = "Serial Number Tracking"
+	questions.extend([
+		_q(s, section, None, "Do you track items by serial number?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Item.has_serial_no"),
+		_q(s, section, None, "If yes, which item categories require serial tracking?", "Text"),
+		_q(s, section, None, "Should serial numbers be auto-generated or manually entered?", "Single Select", options="Auto-generated\nManual\nBoth\nNot applicable", erp_ref="Item.serial_no_series"),
+		_q(s, section, None, "Do you need to track warranty expiry per serial number?", "Single Select", options="Yes\nNo", erp_ref="Serial No.warranty_expiry_date"),
+		_q(s, section, None, "Do you need to track AMC (Annual Maintenance Contract) per serial?", "Single Select", options="Yes\nNo", erp_ref="Serial No.amc_expiry_date"),
+		_q(s, section, None, "Do you need to track which customer received which serial number?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 8: Batch / Lot Tracking
+	s = 8
+	section = "Batch / Lot Tracking"
+	questions.extend([
+		_q(s, section, None, "Do you track items by batch/lot number?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Item.has_batch_no"),
+		_q(s, section, None, "If yes, which item categories require batch tracking?", "Text"),
+		_q(s, section, None, "Should batch numbers be auto-generated or manually entered?", "Single Select", options="Auto-generated\nManual\nBoth\nNot applicable", erp_ref="Item.batch_number_series"),
+		_q(s, section, None, "Do your batches have expiry dates?", "Single Select", options="Yes\nNo", erp_ref="Item.has_expiry_date"),
+		_q(s, section, None, "If yes, what is the typical shelf life?", "Text", erp_ref="Item.shelf_life_in_days"),
+		_q(s, section, None, "Do you need to retain samples from batches for quality purposes?", "Single Select", options="Yes\nNo", erp_ref="Item.retain_sample"),
+		_q(s, section, None, "What strategy for picking batches during dispatch?", "Single Select", options="FIFO (First Expiry First Out)\nLIFO\nManual selection\nNot applicable", erp_ref="Stock Settings.pick_serial_and_batch_based_on"),
+	])
+
+	# Section 9: Barcode Management
+	s = 9
+	section = "Barcode Management"
+	questions.extend([
+		_q(s, section, None, "Do you use barcodes on items?", "Single Select", options="Yes\nNo", erp_ref="Item Barcode"),
+		_q(s, section, None, "If yes, what barcode format?", "Multi Select", options="EAN-13\nUPC-A\nCODE-39\nCODE-128\nGS1\nQR Code\nOther", erp_ref="Item Barcode.barcode_type"),
+		_q(s, section, None, "Do you use barcode scanning for goods receipt, dispatch, or stock counting?", "Multi Select", options="Goods Receipt\nDispatch\nStock Counting\nPick List\nNone"),
+		_q(s, section, None, "Do you need to print barcode labels from the system?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 10: Stock Transactions
+	s = 10
+	section = "Stock Transactions"
+	questions.extend([
+		_q(s, section, None, "What types of stock movements do you need?", "Multi Select", options="Material Receipt\nMaterial Issue\nMaterial Transfer\nManufacture\nRepack\nSubcontracting\nDisassembly", required=1, priority="Critical", erp_ref="Stock Entry.stock_entry_type"),
+		_q(s, section, None, "Do you need inter-warehouse transfers?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "If yes, do you need two-step transfers (via transit warehouse)?", "Single Select", options="Yes\nNo", erp_ref="Stock Entry.add_to_transit"),
+		_q(s, section, None, "Do you need stock entry approval workflows?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you transfer stock at cost price or arm's length price (for inter-company)?", "Single Select", options="Cost Price\nArm's Length Price\nNot applicable", erp_ref="Stock Settings.allow_from_dn"),
+	])
+
+	# Section 11: Material Requests
+	s = 11
+	section = "Material Requests"
+	questions.extend([
+		_q(s, section, None, "Do you use formal material/purchase requisitions?", "Single Select", options="Yes\nNo", erp_ref="Material Request"),
+		_q(s, section, None, "What types of material requests do you raise?", "Multi Select", options="Purchase\nMaterial Transfer\nMaterial Issue\nManufacture\nCustomer Provided", erp_ref="Material Request.material_request_type"),
+		_q(s, section, None, "Do material requests need approval workflows?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should material requests be auto-created from reorder levels?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.auto_indent"),
+	])
+
+	# Section 12: Quality Inspection
+	s = 12
+	section = "Quality Inspection"
+	questions.extend([
+		_q(s, section, None, "Do you perform quality inspections on incoming goods?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Item.inspection_required_before_purchase"),
+		_q(s, section, None, "Do you perform quality inspections on outgoing goods?", "Single Select", options="Yes\nNo", erp_ref="Item.inspection_required_before_delivery"),
+		_q(s, section, None, "Do you have inspection templates with standard parameters?", "Single Select", options="Yes\nNo", erp_ref="Quality Inspection Template"),
+		_q(s, section, None, "What action should be taken if quality inspection fails?", "Single Select", options="Stop transaction\nWarn only\nNo action", erp_ref="Stock Settings.action_if_quality_inspection_is_rejected"),
+		_q(s, section, None, "What action if quality inspection is not submitted?", "Single Select", options="Stop transaction\nWarn only\nNo action", erp_ref="Stock Settings.action_if_quality_inspection_is_not_submitted"),
+		_q(s, section, None, "Do you need to track inspector name and verification?", "Single Select", options="Yes\nNo", erp_ref="Quality Inspection.inspected_by"),
+	])
+
+	# Section 13: Reorder Levels & Auto-Replenishment
+	s = 13
+	section = "Reorder Levels & Auto-Replenishment"
+	questions.extend([
+		_q(s, section, None, "Do you set minimum stock levels (reorder points) for items?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Item Reorder"),
+		_q(s, section, None, "Are reorder levels set per warehouse or globally?", "Single Select", options="Per Warehouse\nGlobal\nNot applicable", erp_ref="Item Reorder.warehouse"),
+		_q(s, section, None, "Should the system auto-create purchase requests when stock falls below reorder level?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.auto_indent"),
+		_q(s, section, None, "Do you need email notifications for reorder alerts?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.reorder_email_notify"),
+		_q(s, section, None, "Do you track safety stock levels?", "Single Select", options="Yes\nNo", erp_ref="Item.safety_stock"),
+		_q(s, section, None, "Do you track lead times for replenishment planning?", "Single Select", options="Yes\nNo", erp_ref="Item.lead_time_days"),
+	])
+
+	# Section 14: Pick List & Packing
+	s = 14
+	section = "Pick List & Packing"
+	questions.extend([
+		_q(s, section, None, "Do you use pick lists for warehouse picking?", "Single Select", options="Yes\nNo", erp_ref="Pick List"),
+		_q(s, section, None, "What purposes do pick lists serve?", "Multi Select", options="Delivery / Sales Orders\nMaterial Transfer\nManufacture\nNot applicable", erp_ref="Pick List.purpose"),
+		_q(s, section, None, "Do you use barcode scanning for pick confirmation?", "Single Select", options="Yes\nNo", erp_ref="Pick List.scan_barcode"),
+		_q(s, section, None, "Do you create packing slips for shipments?", "Single Select", options="Yes\nNo", erp_ref="Packing Slip"),
+		_q(s, section, None, "Do you track package weight (net and gross)?", "Single Select", options="Yes\nNo", erp_ref="Packing Slip.net_weight_pkg"),
+	])
+
+	# Section 15: Putaway Rules
+	s = 15
+	section = "Putaway Rules"
+	questions.extend([
+		_q(s, section, None, "Do you need automated warehouse bin/location assignment on receipt?", "Single Select", options="Yes\nNo", erp_ref="Putaway Rule"),
+		_q(s, section, None, "Do you track bin capacity per item per warehouse?", "Single Select", options="Yes\nNo", erp_ref="Putaway Rule.capacity"),
+		_q(s, section, None, "Do you prioritize certain warehouse locations over others?", "Single Select", options="Yes\nNo", erp_ref="Putaway Rule.priority"),
+	])
+
+	# Section 16: Stock Reconciliation
+	s = 16
+	section = "Stock Reconciliation & Physical Count"
+	questions.extend([
+		_q(s, section, None, "Do you perform physical stock counts?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Stock Reconciliation"),
+		_q(s, section, None, "How often are physical counts done?", "Single Select", options="Monthly\nQuarterly\nAnnually\nCyclic counting\nAd-hoc"),
+		_q(s, section, None, "Do you need cycle counting (count subset of items on rotation)?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "What difference account should stock variances be posted to?", "Text", erp_ref="Stock Reconciliation.expense_account"),
+		_q(s, section, None, "Do you need barcode scanning for stock counts?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 17: Landed Cost
+	s = 17
+	section = "Landed Cost"
+	questions.extend([
+		_q(s, section, None, "Do you need to allocate freight, customs, or other charges to inventory cost?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Landed Cost Voucher"),
+		_q(s, section, None, "What types of landed costs do you incur?", "Multi Select", options="Freight / Shipping\nCustoms Duty\nInsurance\nHandling\nInspection Fees\nOther"),
+		_q(s, section, None, "How should landed costs be distributed?", "Single Select", options="By Quantity\nBy Amount\nManual\nNot applicable", erp_ref="Landed Cost Voucher.distribute_charges_based_on"),
+	])
+
+	# Section 18: Stock Reservation
+	s = 18
+	section = "Stock Reservation"
+	questions.extend([
+		_q(s, section, None, "Do you need to reserve stock for confirmed orders?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Stock Settings.enable_stock_reservation"),
+		_q(s, section, None, "Should partial stock reservation be allowed?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.allow_partial_reservation"),
+		_q(s, section, None, "Should serial/batch numbers be auto-reserved?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.auto_reserve_serial_and_batch"),
+		_q(s, section, None, "When should reserved stock be released?", "Single Select", options="On delivery\nOn invoice\nManual release\nNot applicable"),
+	])
+
+	# Section 19: Stock Freezing & Controls
+	s = 19
+	section = "Stock Freezing & Controls"
+	questions.extend([
+		_q(s, section, None, "Do you need to freeze stock transactions before a certain date?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.stock_frozen_upto"),
+		_q(s, section, None, "If yes, which role should be allowed to post in frozen periods?", "Text", erp_ref="Stock Settings.role_allowed_to_edit"),
+		_q(s, section, None, "Should the system allow negative stock?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Stock Settings.allow_negative_stock"),
+		_q(s, section, None, "Do you need to restrict back-dated stock transactions?", "Single Select", options="Yes\nNo", erp_ref="Stock Settings.role_allowed_to_create_edit_back_dated_transactions"),
+		_q(s, section, None, "What over-delivery/receipt tolerance (%) do you allow?", "Text", erp_ref="Stock Settings.over_delivery_receipt_allowance"),
+	])
+
+	# Section 20: Inventory Reporting
+	s = 20
+	section = "Inventory Reporting"
+	questions.extend([
+		_q(s, section, None, "Which inventory reports do you need?", "Multi Select", options="Stock Balance\nStock Ledger\nStock Projected Qty\nStock Ageing\nStock Analytics\nWarehouse-wise Balance\nSerial No Ledger\nBatch-wise Balance\nItem Price List\nStock vs Account Value\nReorder Level Report\nBOM Search", priority="Important"),
+		_q(s, section, None, "Do you need stock reports filtered by warehouse, item group, or brand?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need stock aging analysis (how long items have been in stock)?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need delayed delivery/receipt reports?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need stock and account value reconciliation reports?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 21: Roles & Permissions
+	s = 21
+	section = "Roles & Permissions"
+	questions.extend([
+		_q(s, section, None, "How many users will use the stock module?", "Text", priority="Important"),
+		_q(s, section, None, "List the inventory roles needed (e.g. Stock Manager, Stock User, Item Manager, Quality Manager).", "Text", priority="Important"),
+		_q(s, section, None, "Should item creation be restricted to certain roles?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should stock entries need approval?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need warehouse-level access restrictions?", "Single Select", options="Yes\nNo", erp_ref="User Permission"),
+	])
+
+	# Section 22: Parking Lot & Open Items
+	s = 22
+	section = "Parking Lot & Open Items"
+	questions.extend([
+		_q(s, section, None, "List any inventory requirements not covered above.", "Text"),
+		_q(s, section, None, "Any known pain points with the current inventory process?", "Text", priority="Important"),
+		_q(s, section, None, "Any compliance or regulatory requirements for inventory (e.g. pharma, food safety)?", "Text"),
+		_q(s, section, None, "Do you need opening stock balances imported? If yes, approximately how many item-warehouse combinations?", "Text", priority="Critical"),
+		_q(s, section, None, "Timeline constraints for stock module go-live?", "Text", priority="Important"),
 		_q(s, section, None, "Any additional notes or comments?", "Text"),
 	])
 
