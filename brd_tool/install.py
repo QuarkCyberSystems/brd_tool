@@ -18,6 +18,15 @@ def after_install():
 	if not frappe.db.exists("BRD Module Template", "Stock BRD v1.0"):
 		seed_stock_template()
 
+	if not frappe.db.exists("BRD Module Template", "CRM BRD v1.0"):
+		seed_crm_template()
+
+	if not frappe.db.exists("BRD Module Template", "Projects BRD v1.0"):
+		seed_projects_template()
+
+	if not frappe.db.exists("BRD Module Template", "Quality Management BRD v1.0"):
+		seed_quality_template()
+
 
 def seed_accounting_template():
 	"""Create the comprehensive Accounting BRD template with all sections and questions."""
@@ -1335,6 +1344,541 @@ def get_stock_questions():
 		_q(s, section, None, "Any compliance or regulatory requirements for inventory (e.g. pharma, food safety)?", "Text"),
 		_q(s, section, None, "Do you need opening stock balances imported? If yes, approximately how many item-warehouse combinations?", "Text", priority="Critical"),
 		_q(s, section, None, "Timeline constraints for stock module go-live?", "Text", priority="Important"),
+		_q(s, section, None, "Any additional notes or comments?", "Text"),
+	])
+
+	return questions
+
+
+def seed_crm_template():
+	"""Create the comprehensive CRM BRD template."""
+	template = frappe.new_doc("BRD Module Template")
+	template.template_name = "CRM BRD v1.0"
+	template.module_name = "CRM"
+	template.version = "1.0"
+	template.description = "Comprehensive Business Requirements Document for CRM implementation. Covers lead management, deal pipeline, organizations, campaigns, email marketing, telephony, SLAs, appointments, contracts, territories, and reporting."
+	template.is_active = 1
+
+	questions = get_crm_questions()
+	for q in questions:
+		template.append("questions", q)
+
+	template.insert(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def get_crm_questions():
+	"""Return the full list of CRM BRD questions."""
+	questions = []
+
+	# Section 1: CRM Strategy & Current State
+	s = 1
+	section = "CRM Strategy & Current State"
+	questions.extend([
+		_q(s, section, None, "How do you currently manage customer relationships (spreadsheet, legacy CRM, manual)?", "Text", priority="Important"),
+		_q(s, section, None, "What are the primary goals for your CRM implementation?", "Multi Select", options="Lead Tracking\nSales Pipeline Management\nCustomer Retention\nMarketing Automation\nCustomer Support\nReporting & Analytics", required=1, priority="Critical"),
+		_q(s, section, None, "How many salespeople / CRM users will there be?", "Text", priority="Important"),
+		_q(s, section, None, "Do you need separate CRM views for different teams?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "What is your average sales cycle length?", "Single Select", options="Less than 1 week\n1-4 weeks\n1-3 months\n3-6 months\n6+ months"),
+	])
+
+	# Section 2: Lead Management
+	s = 2
+	section = "Lead Management"
+	questions.extend([
+		_q(s, section, None, "What are your primary lead sources?", "Multi Select", options="Website\nPhone/Walk-in\nReferral\nSocial Media\nEmail Campaign\nTrade Show/Event\nPaid Advertising\nPartner/Channel\nCold Outreach", required=1, priority="Critical", erp_ref="CRM Lead.source"),
+		_q(s, section, None, "Approximately how many new leads per month?", "Text", priority="Important"),
+		_q(s, section, None, "Do you need automatic lead capture from web forms?", "Single Select", options="Yes\nNo", erp_ref="CRM Lead"),
+		_q(s, section, None, "What information do you capture for each lead?", "Multi Select", options="Name\nEmail\nPhone\nCompany\nJob Title\nIndustry\nRevenue\nEmployee Count\nLocation", erp_ref="CRM Lead"),
+		_q(s, section, None, "Do you need lead auto-assignment to sales reps?", "Single Select", options="Yes - Round robin\nYes - By territory\nYes - By lead source\nNo - Manual assignment", erp_ref="CRM Lead.lead_owner"),
+		_q(s, section, "Lead Statuses", "What lead statuses do you need?", "Text", help_text="e.g. New, Contacted, Qualified, Unqualified, Converted, Junk", priority="Important", erp_ref="CRM Lead Status"),
+		_q(s, section, "Lead Statuses", "Do you need lead qualification criteria or scoring?", "Single Select", options="Yes\nNo"),
+		_q(s, section, "Lead Statuses", "If yes, describe your qualification criteria.", "Text"),
+		_q(s, section, "Duplicates", "How should duplicate leads be handled?", "Single Select", options="Prevent duplicates by email\nAllow duplicates\nMerge duplicates manually", erp_ref="CRM Settings"),
+	])
+
+	# Section 3: Deal / Opportunity Pipeline
+	s = 3
+	section = "Deal / Opportunity Pipeline"
+	questions.extend([
+		_q(s, section, None, "What are your deal/opportunity stages?", "Text", help_text="e.g. Qualification, Proposal, Negotiation, Closed Won, Closed Lost", required=1, priority="Critical", erp_ref="CRM Deal Status"),
+		_q(s, section, None, "Do you assign probability percentages to each stage?", "Single Select", options="Yes\nNo", erp_ref="CRM Deal Status.probability"),
+		_q(s, section, None, "Do you need to track deal value / opportunity amount?", "Single Select", options="Yes\nNo", erp_ref="CRM Deal / Opportunity.opportunity_amount"),
+		_q(s, section, None, "Do you track products/items within each deal?", "Single Select", options="Yes\nNo", erp_ref="Opportunity Item / CRM Product"),
+		_q(s, section, None, "Do you need a Kanban board view for the sales pipeline?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you track competitors on deals?", "Single Select", options="Yes\nNo", erp_ref="Competitor"),
+		_q(s, section, "Lost Deals", "Do you track reasons for lost deals?", "Single Select", options="Yes\nNo", erp_ref="CRM Lost Reason / Opportunity Lost Reason"),
+		_q(s, section, "Lost Deals", "If yes, list the standard lost reasons.", "Text"),
+		_q(s, section, None, "Do you need multiple deal pipelines (e.g. by product line)?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 4: Organizations & Contacts
+	s = 4
+	section = "Organizations & Contacts"
+	questions.extend([
+		_q(s, section, None, "Do you track organizations/companies separately from individual contacts?", "Single Select", options="Yes\nNo", erp_ref="CRM Organization"),
+		_q(s, section, None, "What organization information do you need?", "Multi Select", options="Company Name\nIndustry\nWebsite\nEmployee Count\nAnnual Revenue\nAddress\nTerritory\nLogo", erp_ref="CRM Organization"),
+		_q(s, section, None, "Can multiple contacts belong to the same organization?", "Single Select", options="Yes\nNo", erp_ref="CRM Deal.contacts"),
+		_q(s, section, None, "Do you need to link contacts to deals?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need to auto-create ERPNext Customers from CRM deals?", "Single Select", options="Yes - on deal won\nYes - at specific stage\nNo - manual", erp_ref="ERPNext CRM Settings"),
+	])
+
+	# Section 5: Territory & Sales Team
+	s = 5
+	section = "Territory & Sales Team"
+	questions.extend([
+		_q(s, section, None, "Do you manage sales territories?", "Single Select", options="Yes\nNo", erp_ref="CRM Territory"),
+		_q(s, section, None, "If yes, list your territories or regions.", "Text"),
+		_q(s, section, None, "Do you need territory-based lead/deal assignment?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you have sales teams or individual sales reps?", "Single Select", options="Individual reps\nTeams\nBoth"),
+		_q(s, section, None, "Do sales managers need visibility into their team's pipeline?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 6: Campaigns & Email Marketing
+	s = 6
+	section = "Campaigns & Email Marketing"
+	questions.extend([
+		_q(s, section, None, "Do you run marketing campaigns?", "Single Select", options="Yes\nNo", erp_ref="Campaign"),
+		_q(s, section, None, "What types of campaigns?", "Multi Select", options="Email Drip/Nurture\nEvent/Webinar\nProduct Launch\nSeasonal Promotion\nReferral Program\nSocial Media"),
+		_q(s, section, None, "Do you need automated email sequences (drip campaigns)?", "Single Select", options="Yes\nNo", erp_ref="Email Campaign"),
+		_q(s, section, None, "Do you need to track campaign effectiveness (leads generated, conversion rate)?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need email open/click tracking?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need an unsubscribe mechanism?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you use any external marketing tools that need integration?", "Text"),
+	])
+
+	# Section 7: Communication & Activity Tracking
+	s = 7
+	section = "Communication & Activity Tracking"
+	questions.extend([
+		_q(s, section, None, "What communication channels do you use with leads/customers?", "Multi Select", options="Email\nPhone\nWhatsApp\nSMS\nIn-person meetings\nVideo calls\nSocial media", priority="Important"),
+		_q(s, section, None, "Do you need email integration (send/receive from CRM)?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need call logging?", "Single Select", options="Yes\nNo", erp_ref="CRM Call Log"),
+		_q(s, section, None, "Do you need telephony integration (Twilio, Exotel)?", "Single Select", options="Yes - Twilio\nYes - Exotel\nYes - Other\nNo", erp_ref="CRM Twilio Settings / CRM Exotel Settings"),
+		_q(s, section, None, "Do you need task management within CRM?", "Single Select", options="Yes\nNo", erp_ref="CRM Task"),
+		_q(s, section, None, "Do you need notes/activity timeline on leads and deals?", "Single Select", options="Yes\nNo", erp_ref="FCRM Note"),
+	])
+
+	# Section 8: Service Level Agreements (SLA)
+	s = 8
+	section = "Service Level Agreements"
+	questions.extend([
+		_q(s, section, None, "Do you need SLAs for lead response time?", "Single Select", options="Yes\nNo", erp_ref="CRM Service Level Agreement"),
+		_q(s, section, None, "If yes, what is the target first response time?", "Text", erp_ref="CRM Service Level Priority"),
+		_q(s, section, None, "Do SLA targets vary by priority or lead source?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need SLA tracking on deals as well?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need SLA breach notifications?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you have working hours / holiday lists that affect SLA calculation?", "Single Select", options="Yes\nNo", erp_ref="CRM Holiday List"),
+	])
+
+	# Section 9: Appointments & Scheduling
+	s = 9
+	section = "Appointments & Scheduling"
+	questions.extend([
+		_q(s, section, None, "Do you need online appointment booking for prospects/customers?", "Single Select", options="Yes\nNo", erp_ref="Appointment Booking Settings"),
+		_q(s, section, None, "Should appointments be bookable from your website?", "Single Select", options="Yes\nNo", erp_ref="Appointment"),
+		_q(s, section, None, "What is the default appointment duration?", "Single Select", options="15 minutes\n30 minutes\n1 hour\nCustom", erp_ref="Appointment Booking Settings.appointment_duration"),
+		_q(s, section, None, "How many days in advance can appointments be booked?", "Text", erp_ref="Appointment Booking Settings.advance_booking_days"),
+		_q(s, section, None, "Do you need automated email reminders for appointments?", "Single Select", options="Yes\nNo", erp_ref="Appointment Booking Settings.email_reminders"),
+	])
+
+	# Section 10: Contracts
+	s = 10
+	section = "Contracts"
+	questions.extend([
+		_q(s, section, None, "Do you manage contracts with customers?", "Single Select", options="Yes\nNo", erp_ref="Contract"),
+		_q(s, section, None, "Do you use contract templates?", "Single Select", options="Yes\nNo", erp_ref="Contract Template"),
+		_q(s, section, None, "Do contracts need digital signatures?", "Single Select", options="Yes\nNo", erp_ref="Contract.is_signed"),
+		_q(s, section, None, "Do you track contract fulfilment milestones?", "Single Select", options="Yes\nNo", erp_ref="Contract.requires_fulfilment"),
+		_q(s, section, None, "Do you need contract expiry alerts?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 11: ERPNext Integration
+	s = 11
+	section = "ERPNext Integration"
+	questions.extend([
+		_q(s, section, None, "Do you use ERPNext for accounting/inventory alongside CRM?", "Single Select", options="Yes\nNo", erp_ref="ERPNext CRM Settings"),
+		_q(s, section, None, "Should won deals automatically create Customers in ERPNext?", "Single Select", options="Yes\nNo", erp_ref="ERPNext CRM Settings.create_customer_on_status_change"),
+		_q(s, section, None, "At which deal stage should the Customer be created?", "Text", erp_ref="ERPNext CRM Settings.deal_status"),
+		_q(s, section, None, "Do you need Quotations created from CRM deals?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need Sales Orders created from CRM?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Which ERPNext company should CRM data sync with?", "Text", erp_ref="ERPNext CRM Settings.erpnext_company"),
+	])
+
+	# Section 12: CRM Reporting & Dashboards
+	s = 12
+	section = "Reporting & Dashboards"
+	questions.extend([
+		_q(s, section, None, "Which CRM reports do you need?", "Multi Select", options="Sales Pipeline\nLead Conversion Rate\nLead Source Analysis\nCampaign Efficiency\nSales Rep Performance\nTerritory-wise Analysis\nLost Opportunity Analysis\nFirst Response Time\nForecast / Revenue Projection", priority="Important"),
+		_q(s, section, None, "Do you need custom CRM dashboards?", "Single Select", options="Yes\nNo", erp_ref="CRM Dashboard"),
+		_q(s, section, None, "Do you need scheduled email reports?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Who needs access to CRM reports?", "Multi Select", options="Sales Reps\nSales Managers\nMarketing Team\nExecutive Management"),
+	])
+
+	# Section 13: Roles & Permissions
+	s = 13
+	section = "Roles & Permissions"
+	questions.extend([
+		_q(s, section, None, "What CRM roles do you need?", "Multi Select", options="Sales Manager\nSales User\nMarketing User\nCRM Admin\nRead-only Viewer", priority="Important"),
+		_q(s, section, None, "Should sales reps only see their own leads/deals?", "Single Select", options="Yes - own only\nNo - see all\nBy territory", erp_ref="CRM Lead.lead_owner"),
+		_q(s, section, None, "Should managers see all team data?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should lead deletion be restricted?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 14: Data Migration
+	s = 14
+	section = "Data Migration"
+	questions.extend([
+		_q(s, section, None, "Do you have existing CRM data to migrate?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "What data needs to be migrated?", "Multi Select", options="Leads\nContacts\nOrganizations/Companies\nDeals/Opportunities\nCommunication History\nTasks/Activities\nCampaign Data"),
+		_q(s, section, None, "What is the source system?", "Text"),
+		_q(s, section, None, "What format is the data in?", "Single Select", options="Excel/CSV\nAPI export\nDatabase dump\nManual records"),
+		_q(s, section, None, "Approximately how many records to migrate?", "Text"),
+	])
+
+	# Section 15: Parking Lot & Open Items
+	s = 15
+	section = "Parking Lot & Open Items"
+	questions.extend([
+		_q(s, section, None, "List any CRM requirements not covered above.", "Text"),
+		_q(s, section, None, "Any known pain points with the current sales process?", "Text", priority="Important"),
+		_q(s, section, None, "Any third-party integrations needed (Mailchimp, HubSpot, Zapier, etc.)?", "Text"),
+		_q(s, section, None, "Timeline constraints for CRM go-live?", "Text", priority="Important"),
+		_q(s, section, None, "Any additional notes or comments?", "Text"),
+	])
+
+	return questions
+
+
+def seed_projects_template():
+	"""Create the comprehensive Projects BRD template."""
+	template = frappe.new_doc("BRD Module Template")
+	template.template_name = "Projects BRD v1.0"
+	template.module_name = "Projects"
+	template.version = "1.0"
+	template.description = "Comprehensive Business Requirements Document for ERPNext Projects module implementation. Covers project types, task management, time tracking, costing, billing, templates, and reporting."
+	template.is_active = 1
+
+	questions = get_projects_questions()
+	for q in questions:
+		template.append("questions", q)
+
+	template.insert(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def get_projects_questions():
+	"""Return the full list of Projects BRD questions."""
+	questions = []
+
+	# Section 1: Project Management Overview
+	s = 1
+	section = "Project Management Overview"
+	questions.extend([
+		_q(s, section, None, "How do you currently manage projects (spreadsheet, MS Project, other tool)?", "Text", priority="Important"),
+		_q(s, section, None, "What is the primary purpose of projects in your organization?", "Multi Select", options="Client delivery\nInternal initiatives\nProduct development\nConstruction/Engineering\nConsulting/Services\nIT/Software\nEvent management\nOther", required=1, priority="Critical"),
+		_q(s, section, None, "Approximately how many concurrent projects do you typically have?", "Text"),
+		_q(s, section, None, "What is the typical project duration?", "Single Select", options="Less than 1 week\n1-4 weeks\n1-3 months\n3-6 months\n6-12 months\n12+ months"),
+		_q(s, section, None, "Do you need project portfolio management (multiple related projects)?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 2: Project Types & Categories
+	s = 2
+	section = "Project Types & Categories"
+	questions.extend([
+		_q(s, section, None, "What types of projects do you run?", "Text", required=1, priority="Important", erp_ref="Project Type"),
+		_q(s, section, None, "Do you need to categorize projects by type?", "Single Select", options="Yes\nNo", erp_ref="Project.project_type"),
+		_q(s, section, None, "Do you link projects to specific customers?", "Single Select", options="Yes\nNo", erp_ref="Project.customer"),
+		_q(s, section, None, "Do you link projects to Sales Orders?", "Single Select", options="Yes\nNo", erp_ref="Project.sales_order"),
+		_q(s, section, None, "Do you need project priority levels?", "Single Select", options="Yes\nNo", erp_ref="Project.priority"),
+	])
+
+	# Section 3: Project Templates
+	s = 3
+	section = "Project Templates"
+	questions.extend([
+		_q(s, section, None, "Do you have repeatable project structures that could use templates?", "Single Select", options="Yes\nNo", erp_ref="Project Template"),
+		_q(s, section, None, "If yes, describe your standard project structures.", "Text"),
+		_q(s, section, None, "Do templates include predefined tasks with durations and dependencies?", "Single Select", options="Yes\nNo", erp_ref="Project Template Task"),
+		_q(s, section, None, "How many project templates do you anticipate needing?", "Text"),
+	])
+
+	# Section 4: Task Management
+	s = 4
+	section = "Task Management"
+	questions.extend([
+		_q(s, section, None, "How granular are your project tasks?", "Single Select", options="High level milestones only\nDetailed task breakdown\nMulti-level hierarchy (task groups + sub-tasks)", erp_ref="Task"),
+		_q(s, section, None, "Do you need task dependencies (Task B starts after Task A)?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Task Depends On"),
+		_q(s, section, None, "Do you need Gantt chart visualization?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "What task statuses do you use?", "Text", help_text="Default: Open, Working, Pending Review, Overdue, Template, Completed, Cancelled", erp_ref="Task.status"),
+		_q(s, section, None, "Do you need task priority levels?", "Single Select", options="Yes\nNo", erp_ref="Task.priority"),
+		_q(s, section, None, "Do you need milestones within projects?", "Single Select", options="Yes\nNo", erp_ref="Task.is_milestone"),
+		_q(s, section, None, "Do you track task progress percentage?", "Single Select", options="Yes\nNo", erp_ref="Task.progress"),
+		_q(s, section, None, "Do you need task types/categories?", "Single Select", options="Yes\nNo", erp_ref="Task Type"),
+		_q(s, section, None, "Do you assign tasks to specific users?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need task weight for weighted progress calculation?", "Single Select", options="Yes\nNo", erp_ref="Task.task_weight"),
+	])
+
+	# Section 5: Project Progress Tracking
+	s = 5
+	section = "Project Progress Tracking"
+	questions.extend([
+		_q(s, section, None, "How should project completion percentage be calculated?", "Single Select", options="Task Completion\nTask Progress\nTask Weight\nManual", required=1, priority="Important", erp_ref="Project.percent_complete_method"),
+		_q(s, section, None, "Do you need periodic project status updates?", "Single Select", options="Yes\nNo", erp_ref="Project Update"),
+		_q(s, section, None, "If yes, how often?", "Single Select", options="Daily\nWeekly\nBi-weekly\nMonthly", erp_ref="Project.frequency"),
+		_q(s, section, None, "Do you track project start and end dates (expected vs actual)?", "Single Select", options="Yes\nNo", erp_ref="Project.expected_start_date"),
+		_q(s, section, None, "Do you need project status workflow (e.g. Open → In Progress → Completed)?", "Single Select", options="Yes\nNo", erp_ref="Project.status"),
+	])
+
+	# Section 6: Time Tracking & Timesheets
+	s = 6
+	section = "Time Tracking & Timesheets"
+	questions.extend([
+		_q(s, section, None, "Do you need to track time spent on projects/tasks?", "Single Select", options="Yes\nNo", required=1, priority="Critical", erp_ref="Timesheet"),
+		_q(s, section, None, "Who fills in timesheets?", "Multi Select", options="All employees\nProject team members only\nConsultants/contractors\nSpecific roles"),
+		_q(s, section, None, "What is the time logging granularity?", "Single Select", options="Minutes\nHalf-hours\n Hours\nDays"),
+		_q(s, section, None, "Do you need activity types for categorizing time entries?", "Single Select", options="Yes\nNo", erp_ref="Activity Type"),
+		_q(s, section, None, "If yes, list your activity types.", "Text", help_text="e.g. Development, Design, Meeting, Travel, Support", erp_ref="Activity Type"),
+		_q(s, section, None, "Do timesheets need approval before submission?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need to prevent overlapping time entries?", "Single Select", options="Yes\nNo", erp_ref="Projects Settings.ignore_employee_time_overlap"),
+	])
+
+	# Section 7: Project Costing
+	s = 7
+	section = "Project Costing"
+	questions.extend([
+		_q(s, section, None, "Do you track project costs?", "Single Select", options="Yes\nNo", priority="Critical", erp_ref="Project.total_costing_amount"),
+		_q(s, section, None, "What cost components do you track?", "Multi Select", options="Labour (timesheets)\nMaterial / Stock\nPurchases\nExpenses\nSubcontractor costs\nOverheads"),
+		_q(s, section, None, "Do you set estimated budgets per project?", "Single Select", options="Yes\nNo", erp_ref="Project.estimated_costing"),
+		_q(s, section, None, "Do you need costing rates per activity type?", "Single Select", options="Yes\nNo", erp_ref="Activity Type.costing_rate"),
+		_q(s, section, None, "Do you need per-employee costing rates (Activity Cost)?", "Single Select", options="Yes\nNo", erp_ref="Activity Cost"),
+		_q(s, section, None, "Do you need to track material consumption against projects?", "Single Select", options="Yes\nNo", erp_ref="Project.total_consumed_material_cost"),
+		_q(s, section, None, "Do you link Purchase Orders/Invoices to projects for cost tracking?", "Single Select", options="Yes\nNo", erp_ref="Project.total_purchase_cost"),
+		_q(s, section, None, "Do you need project profitability analysis (revenue vs cost)?", "Single Select", options="Yes\nNo", erp_ref="Project.gross_margin"),
+	])
+
+	# Section 8: Project Billing
+	s = 8
+	section = "Project Billing"
+	questions.extend([
+		_q(s, section, None, "Do you bill clients for project work?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "What is your billing model?", "Multi Select", options="Time & Material (hourly)\nFixed Price\nMilestone-based\nRetainer/Subscription\nMixed"),
+		_q(s, section, None, "Do you need billing rates per activity type?", "Single Select", options="Yes\nNo", erp_ref="Activity Type.billing_rate"),
+		_q(s, section, None, "Do you generate Sales Invoices from timesheets?", "Single Select", options="Yes\nNo", erp_ref="Timesheet.sales_invoice"),
+		_q(s, section, None, "Do you track billable vs non-billable hours?", "Single Select", options="Yes\nNo", erp_ref="Timesheet.total_billable_hours"),
+		_q(s, section, None, "Do you need to track billed percentage per project?", "Single Select", options="Yes\nNo", erp_ref="Project.total_billed_amount"),
+	])
+
+	# Section 9: Project Team & Resources
+	s = 9
+	section = "Project Team & Resources"
+	questions.extend([
+		_q(s, section, None, "Do you assign team members to projects?", "Single Select", options="Yes\nNo", erp_ref="Project User"),
+		_q(s, section, None, "Do you need to track resource allocation across projects?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you link projects to departments?", "Single Select", options="Yes\nNo", erp_ref="Project.department"),
+		_q(s, section, None, "Do you need a project cost centre for accounting?", "Single Select", options="Yes\nNo", erp_ref="Project.cost_center"),
+		_q(s, section, None, "Do project team members need a portal/external view?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 10: Holiday & Working Hours
+	s = 10
+	section = "Holiday & Working Hours"
+	questions.extend([
+		_q(s, section, None, "Do projects follow a specific holiday calendar?", "Single Select", options="Yes - company calendar\nYes - project-specific\nNo", erp_ref="Project.holiday_list"),
+		_q(s, section, None, "Do you define working hours for time-based calculations?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need to account for holidays when calculating task durations?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 11: Reporting
+	s = 11
+	section = "Reporting"
+	questions.extend([
+		_q(s, section, None, "Which project reports do you need?", "Multi Select", options="Project Summary\nProject Billing Summary\nEmployee Billing Summary\nDaily Timesheet Summary\nDelayed Tasks Summary\nProject-wise Stock Tracking\nProject Profitability\nResource Utilization", priority="Important"),
+		_q(s, section, None, "Do you need project dashboards?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need scheduled project status email reports?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need consolidated reporting across all projects?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 12: Roles & Permissions
+	s = 12
+	section = "Roles & Permissions"
+	questions.extend([
+		_q(s, section, None, "What project roles do you need?", "Multi Select", options="Projects Manager\nProjects User\nTimesheet User\nRead-only Viewer", priority="Important"),
+		_q(s, section, None, "Should project creation be restricted to managers?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should users only see projects they are assigned to?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should timesheet submission require approval?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 13: Parking Lot & Open Items
+	s = 13
+	section = "Parking Lot & Open Items"
+	questions.extend([
+		_q(s, section, None, "List any project management requirements not covered above.", "Text"),
+		_q(s, section, None, "Any known pain points with current project tracking?", "Text", priority="Important"),
+		_q(s, section, None, "Any third-party integrations needed (Jira, Asana, MS Project, etc.)?", "Text"),
+		_q(s, section, None, "Timeline constraints for projects module go-live?", "Text", priority="Important"),
+		_q(s, section, None, "Any additional notes or comments?", "Text"),
+	])
+
+	return questions
+
+
+def seed_quality_template():
+	"""Create the comprehensive Quality Management BRD template."""
+	template = frappe.new_doc("BRD Module Template")
+	template.template_name = "Quality Management BRD v1.0"
+	template.module_name = "Quality Management"
+	template.version = "1.0"
+	template.description = "Comprehensive Business Requirements Document for ERPNext Quality Management module implementation. Covers quality inspections, goals, procedures, reviews, non-conformance, CAPA, feedback, meetings, and reporting."
+	template.is_active = 1
+
+	questions = get_quality_questions()
+	for q in questions:
+		template.append("questions", q)
+
+	template.insert(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def get_quality_questions():
+	"""Return the full list of Quality Management BRD questions."""
+	questions = []
+
+	# Section 1: Quality Management Overview
+	s = 1
+	section = "Quality Management Overview"
+	questions.extend([
+		_q(s, section, None, "Does your organization have a formal Quality Management System (QMS)?", "Single Select", options="Yes - ISO 9001 certified\nYes - Other standard\nYes - Internal QMS\nNo - planning to implement", priority="Critical"),
+		_q(s, section, None, "What quality standards or certifications do you need to comply with?", "Multi Select", options="ISO 9001\nISO 14001\nISO 45001\nISO 22000\nIATF 16949\nAS9100\nGMP\nFDA\nNone specific", priority="Important"),
+		_q(s, section, None, "Who is responsible for quality management?", "Text"),
+		_q(s, section, None, "How do you currently manage quality processes (manual, spreadsheet, software)?", "Text"),
+		_q(s, section, None, "What are the primary goals of quality management?", "Multi Select", options="Product quality assurance\nProcess improvement\nRegulatory compliance\nCustomer satisfaction\nDefect reduction\nSupplier quality\nAudit readiness", required=1, priority="Critical"),
+	])
+
+	# Section 2: Quality Inspection
+	s = 2
+	section = "Quality Inspection"
+	questions.extend([
+		_q(s, section, None, "Do you perform quality inspections on incoming materials?", "Single Select", options="Yes - all items\nYes - selected items\nNo", priority="Critical", erp_ref="Quality Inspection.inspection_type = Incoming"),
+		_q(s, section, None, "Do you perform in-process quality inspections?", "Single Select", options="Yes\nNo", erp_ref="Quality Inspection.inspection_type = In Process"),
+		_q(s, section, None, "Do you perform outgoing/final quality inspections?", "Single Select", options="Yes\nNo", erp_ref="Quality Inspection.inspection_type = Outgoing"),
+		_q(s, section, None, "What triggers an inspection?", "Multi Select", options="Purchase Receipt\nStock Entry (Manufacture)\nDelivery Note\nManual/Ad-hoc\nSubcontracting Receipt", erp_ref="Quality Inspection.reference_type"),
+		_q(s, section, None, "Do you use inspection templates with predefined parameters?", "Single Select", options="Yes\nNo", erp_ref="Quality Inspection Template"),
+		_q(s, section, None, "List the inspection parameters you typically measure.", "Text", help_text="e.g. Dimensions, Weight, Color, Hardness, pH, Temperature", erp_ref="Quality Inspection Reading"),
+		_q(s, section, None, "Do you need acceptance criteria (min/max values, formula-based)?", "Single Select", options="Yes - numeric ranges\nYes - pass/fail\nBoth", erp_ref="Quality Inspection Reading"),
+		_q(s, section, None, "Do you inspect every item or use sample-based inspection?", "Single Select", options="100% inspection\nSample-based\nBoth depending on item", erp_ref="Quality Inspection.sample_size"),
+		_q(s, section, None, "Should inspection be mandatory before stock acceptance?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "Do you need serial number or batch-level inspections?", "Single Select", options="Yes - Serial number\nYes - Batch\nBoth\nNo", erp_ref="Quality Inspection.item_serial_no / batch_no"),
+	])
+
+	# Section 3: Quality Goals
+	s = 3
+	section = "Quality Goals"
+	questions.extend([
+		_q(s, section, None, "Do you set measurable quality goals/KPIs?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Quality Goal"),
+		_q(s, section, None, "How often are quality goals reviewed?", "Single Select", options="Daily\nWeekly\nMonthly\nQuarterly\nAnnually", erp_ref="Quality Goal.frequency"),
+		_q(s, section, None, "What types of quality objectives do you track?", "Multi Select", options="Defect rate\nFirst pass yield\nCustomer complaints\nReturn rate\nInspection pass rate\nOn-time delivery\nSupplier quality score\nProcess capability (Cpk)\nAudit findings closure", erp_ref="Quality Goal Objective"),
+		_q(s, section, None, "Do you link quality goals to specific procedures?", "Single Select", options="Yes\nNo", erp_ref="Quality Goal.procedure"),
+		_q(s, section, None, "Do you need target vs actual tracking for quality objectives?", "Single Select", options="Yes\nNo", erp_ref="Quality Goal Objective"),
+	])
+
+	# Section 4: Quality Procedures
+	s = 4
+	section = "Quality Procedures"
+	questions.extend([
+		_q(s, section, None, "Do you have documented quality procedures / SOPs?", "Single Select", options="Yes\nNo", priority="Important", erp_ref="Quality Procedure"),
+		_q(s, section, None, "Do procedures have a hierarchical structure (parent-child)?", "Single Select", options="Yes\nNo", erp_ref="Quality Procedure.parent_quality_procedure"),
+		_q(s, section, None, "Do procedures define step-by-step processes?", "Single Select", options="Yes\nNo", erp_ref="Quality Procedure Process"),
+		_q(s, section, None, "Do you assign process owners to procedures?", "Single Select", options="Yes\nNo", erp_ref="Quality Procedure.process_owner"),
+		_q(s, section, None, "Approximately how many quality procedures do you have?", "Text"),
+		_q(s, section, None, "Do procedures need version control / revision tracking?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 5: Quality Reviews
+	s = 5
+	section = "Quality Reviews"
+	questions.extend([
+		_q(s, section, None, "Do you conduct periodic quality reviews?", "Single Select", options="Yes\nNo", erp_ref="Quality Review"),
+		_q(s, section, None, "How often are reviews conducted?", "Single Select", options="Weekly\nMonthly\nQuarterly\nAnnually\nAs needed"),
+		_q(s, section, None, "Are reviews linked to specific quality goals?", "Single Select", options="Yes\nNo", erp_ref="Quality Review.goal"),
+		_q(s, section, None, "Do reviews measure performance against objectives?", "Single Select", options="Yes\nNo", erp_ref="Quality Review Objective"),
+		_q(s, section, None, "Do you track review status (Open, Pending, Closed)?", "Single Select", options="Yes\nNo", erp_ref="Quality Review.status"),
+	])
+
+	# Section 6: Non-Conformance & CAPA
+	s = 6
+	section = "Non-Conformance & CAPA"
+	questions.extend([
+		_q(s, section, None, "Do you track non-conformances (NCRs)?", "Single Select", options="Yes\nNo", priority="Critical", erp_ref="Non Conformance"),
+		_q(s, section, None, "What triggers a non-conformance report?", "Multi Select", options="Failed inspection\nCustomer complaint\nProcess deviation\nAudit finding\nSupplier issue\nInternal observation", erp_ref="Non Conformance"),
+		_q(s, section, None, "Do you link non-conformances to quality procedures?", "Single Select", options="Yes\nNo", erp_ref="Non Conformance.procedure"),
+		_q(s, section, None, "Do you implement Corrective and Preventive Actions (CAPA)?", "Single Select", options="Yes\nNo", priority="Critical", erp_ref="Quality Action"),
+		_q(s, section, None, "Do you need to track action resolutions with deadlines?", "Single Select", options="Yes\nNo", erp_ref="Quality Action Resolution"),
+		_q(s, section, None, "Do quality actions need status tracking (Open, In Progress, Completed)?", "Single Select", options="Yes\nNo", erp_ref="Quality Action.status"),
+		_q(s, section, None, "Do you link CAPA to quality reviews or feedback?", "Single Select", options="Yes\nNo", erp_ref="Quality Action.review / Quality Action.feedback"),
+	])
+
+	# Section 7: Quality Feedback
+	s = 7
+	section = "Quality Feedback"
+	questions.extend([
+		_q(s, section, None, "Do you collect quality feedback from internal or external sources?", "Single Select", options="Internal only\nExternal (customers/suppliers)\nBoth\nNo", erp_ref="Quality Feedback"),
+		_q(s, section, None, "Do you use standardized feedback templates?", "Single Select", options="Yes\nNo", erp_ref="Quality Feedback Template"),
+		_q(s, section, None, "What feedback parameters do you capture?", "Text", help_text="e.g. Product Quality, Delivery Time, Packaging, Service, Communication", erp_ref="Quality Feedback Parameter"),
+		_q(s, section, None, "Do you link feedback to specific transactions (PO, SO, DN)?", "Single Select", options="Yes\nNo", erp_ref="Quality Feedback.document_type"),
+		_q(s, section, None, "Should negative feedback trigger a quality action?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 8: Quality Meetings
+	s = 8
+	section = "Quality Meetings"
+	questions.extend([
+		_q(s, section, None, "Do you hold regular quality meetings (e.g. MRM - Management Review Meeting)?", "Single Select", options="Yes\nNo", erp_ref="Quality Meeting"),
+		_q(s, section, None, "Do you need to track meeting agendas and minutes?", "Single Select", options="Yes\nNo", erp_ref="Quality Meeting Agenda / Quality Meeting Minutes"),
+		_q(s, section, None, "Do meetings generate action items that need follow-up?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "What is the typical frequency of quality meetings?", "Single Select", options="Weekly\nMonthly\nQuarterly\nAs needed"),
+	])
+
+	# Section 9: Supplier Quality
+	s = 9
+	section = "Supplier Quality"
+	questions.extend([
+		_q(s, section, None, "Do you evaluate supplier quality?", "Single Select", options="Yes\nNo", priority="Important"),
+		_q(s, section, None, "Do you maintain an approved supplier list?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you require incoming inspection for all supplier deliveries?", "Single Select", options="Yes - all\nYes - new suppliers only\nYes - critical items only\nNo"),
+		_q(s, section, None, "Do you track supplier quality scores/ratings?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you issue corrective action requests to suppliers?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 10: Reporting & Analytics
+	s = 10
+	section = "Reporting & Analytics"
+	questions.extend([
+		_q(s, section, None, "Which quality reports do you need?", "Multi Select", options="Inspection Summary\nDefect Analysis\nNon-Conformance Log\nCAPA Status\nQuality Goal vs Actual\nSupplier Quality Scorecard\nCustomer Complaint Trend\nAudit Findings Summary", priority="Important"),
+		_q(s, section, None, "Do you need quality dashboards?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need trend analysis (defect trends over time)?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Do you need quality data for management review presentations?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 11: Roles & Permissions
+	s = 11
+	section = "Roles & Permissions"
+	questions.extend([
+		_q(s, section, None, "What quality roles do you need?", "Multi Select", options="Quality Manager\nQuality Inspector\nQuality Auditor\nProcess Owner\nRead-only Viewer", priority="Important"),
+		_q(s, section, None, "Should only Quality Inspectors create inspection reports?", "Single Select", options="Yes\nNo"),
+		_q(s, section, None, "Should non-conformance reports be visible to all or restricted?", "Single Select", options="All users\nQuality team only\nManagement + Quality team"),
+		_q(s, section, None, "Do auditors need read-only access?", "Single Select", options="Yes\nNo"),
+	])
+
+	# Section 12: Parking Lot & Open Items
+	s = 12
+	section = "Parking Lot & Open Items"
+	questions.extend([
+		_q(s, section, None, "List any quality management requirements not covered above.", "Text"),
+		_q(s, section, None, "Any known pain points with current quality processes?", "Text", priority="Important"),
+		_q(s, section, None, "Any upcoming audits or certifications with deadlines?", "Text", priority="Important"),
+		_q(s, section, None, "Any third-party integrations needed (LIMS, SPC tools, etc.)?", "Text"),
+		_q(s, section, None, "Timeline constraints for quality module go-live?", "Text", priority="Important"),
 		_q(s, section, None, "Any additional notes or comments?", "Text"),
 	])
 

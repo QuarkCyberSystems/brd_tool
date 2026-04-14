@@ -28,7 +28,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Module",
-   "options": "Accounting\nAssets\nBuying\nSelling\nStock\nHR\nCRM\nManufacturing\nProjects",
+   "options": "Accounting\nAssets\nBuying\nSelling\nStock\nHR\nCRM\nManufacturing\nProjects\nQuality Management",
    "reqd": 1
   },
   {
